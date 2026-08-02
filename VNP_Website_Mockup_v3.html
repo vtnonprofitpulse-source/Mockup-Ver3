@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vermont Nonprofit Pulse — Website Mockup v3</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #f5f5f5; color: #222; font-size: 15px; }
+
+  .header { background: #fff; border-bottom: 1px solid #ddd; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon { width: 38px; height: 38px; background: #e8f0fe; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .logo-text { font-size: 18px; font-weight: bold; color: #1a56a0; }
+  .logo-sub { font-size: 11px; color: #888; }
+  .nav-btns { display: flex; gap: 8px; }
+  .nav-btn { background: #f0f0f0; border: 1px solid #ddd; border-radius: 6px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: #333; }
+
+  .hero { background: linear-gradient(135deg, #1a3a6b 0%, #2E5E8E 100%); padding: 32px 24px; text-align: center; }
+  .hero h1 { font-size: 24px; font-weight: bold; color: #fff; margin-bottom: 8px; }
+  .hero p { font-size: 14px; color: #c5d5f0; margin-bottom: 20px; }
+  .search-bar { max-width: 540px; margin: 0 auto; display: flex; gap: 0; box-shadow: 0 2px 12px rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; }
+  .search-bar input { flex: 1; padding: 12px 16px; border: none; font-size: 14px; outline: none; }
+  .search-bar button { background: #f59e0b; color: #fff; border: none; padding: 12px 22px; font-size: 14px; font-weight: bold; cursor: pointer; }
+
+  .cat-section { background: #fff; border-bottom: 1px solid #ddd; padding: 16px 24px; }
+  .cat-section-title { font-size: 12px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 14px; }
+  .cat-group { margin-bottom: 14px; }
+  .cat-group-label { font-size: 11px; font-weight: bold; color: #1a56a0; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid #e8f0fe; }
+  .cat-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill { display: inline-flex; align-items: center; gap: 5px; background: #f5f7ff; border: 1px solid #dde4f5; border-radius: 20px; padding: 5px 12px; font-size: 12px; color: #333; cursor: pointer; }
+  .pill.active { background: #1a56a0; border-color: #1a56a0; color: #fff; }
+  .pill-emoji { font-size: 13px; }
+
+  .filters2 { background: #fafafa; border-bottom: 1px solid #ddd; padding: 12px 24px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .filter-group { display: flex; flex-direction: column; gap: 3px; }
+  .filter-group label { font-size: 11px; color: #888; }
+  .filter-group select { padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: #fff; }
+  .active-filters { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .filter-tag { background: #e8f0fe; color: #1a56a0; font-size: 11px; padding: 3px 10px; border-radius: 12px; }
+  .clear-btn { font-size: 12px; color: #888; background: none; border: none; cursor: pointer; text-decoration: underline; }
+
+  .results-bar { padding: 10px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; background: #fff; border-bottom: 1px solid #eee; }
+  .results-count { font-size: 13px; color: #666; }
+  .sort-select { font-size: 12px; padding: 5px 8px; border: 1px solid #ddd; border-radius: 6px; background: #fff; }
+
+  .cards { padding: 16px 24px; display: flex; flex-direction: column; gap: 10px; }
+  .card { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 14px 18px; border-left: 4px solid #ddd; }
+  .card.event { border-left-color: #1a56a0; }
+  .card.volunteer { border-left-color: #1e7e34; }
+  .card.fundraiser { border-left-color: #b45309; }
+  .card.donate { border-left-color: #c0392b; }
+  .card.news { border-left-color: #888; }
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .card-meta-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .badge { font-size: 11px; font-weight: bold; padding: 3px 10px; border-radius: 12px; }
+  .badge-event { background: #e8f0fe; color: #1a56a0; }
+  .badge-volunteer { background: #e6f4ea; color: #1e7e34; }
+  .badge-fundraiser { background: #fff8e1; color: #b45309; }
+  .badge-donate { background: #fce8e8; color: #c0392b; }
+  .badge-news { background: #f0f0f0; color: #555; }
+  .card-date { font-size: 11px; color: #888; }
+  .card-location { font-size: 11px; color: #888; background: #f5f5f5; padding: 2px 8px; border-radius: 10px; }
+  .card-title { font-size: 15px; font-weight: bold; color: #1a1a1a; margin-bottom: 5px; }
+  .card-desc { font-size: 13px; color: #555; line-height: 1.5; margin-bottom: 10px; }
+  .card-bottom { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; }
+  .card-org { font-size: 12px; color: #888; display: flex; align-items: center; gap: 6px; }
+  .card-cat { font-size: 11px; color: #aaa; background: #f5f5f5; padding: 2px 8px; border-radius: 10px; }
+  .card-link { font-size: 12px; color: #1a56a0; text-decoration: none; font-weight: bold; }
+
+  .digest { margin: 8px 24px 16px; background: linear-gradient(135deg, #e8f0fe, #f0f7ff); border: 1px solid #c5d5f0; border-radius: 12px; padding: 18px 22px; text-align: center; }
+  .digest h3 { font-size: 16px; font-weight: bold; color: #1a3a6b; margin-bottom: 4px; }
+  .digest p { font-size: 12px; color: #555; margin-bottom: 12px; }
+  .digest-form { display: flex; gap: 8px; max-width: 380px; margin: 0 auto; flex-wrap: wrap; }
+  .digest-form input { flex: 1; min-width: 180px; padding: 9px 12px; border: 1px solid #bcd; border-radius: 6px; font-size: 13px; }
+  .digest-form button { background: #1a56a0; color: #fff; border: none; border-radius: 6px; padding: 9px 18px; font-size: 13px; cursor: pointer; font-weight: bold; }
+
+  .footer { text-align: center; padding: 14px 24px; font-size: 11px; color: #aaa; border-top: 1px solid #eee; background: #fff; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">🌿</div>
+    <div>
+      <div class="logo-text">Vermont Nonprofit Pulse</div>
+      <div class="logo-sub">News · Events · Volunteers · Fundraisers</div>
+    </div>
+  </div>
+  <div class="nav-btns">
+    <button class="nav-btn">About</button>
+    <button class="nav-btn">Add your nonprofit</button>
+  </div>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <h1>What's happening across Vermont's nonprofits</h1>
+  <p>Events, volunteer opportunities, fundraisers, and news — all in one place, updated daily</p>
+  <div class="search-bar">
+    <input type="text" placeholder="🔍   Search by keyword, organization, or topic..." />
+    <button>Search</button>
+  </div>
+</div>
+
+<!-- CATEGORY PILLS -->
+<div class="cat-section">
+  <div class="cat-section-title">Browse by mission area</div>
+
+  <div class="cat-group">
+    <div class="cat-group-label">People &amp; Community</div>
+    <div class="cat-pills">
+      <span class="pill"><span class="pill-emoji">🥦</span> Food &amp; Hunger</span>
+      <span class="pill"><span class="pill-emoji">🏠</span> Housing &amp; Shelter</span>
+      <span class="pill"><span class="pill-emoji">❤️</span> Health &amp; Wellness</span>
+      <span class="pill"><span class="pill-emoji">🧠</span> Mental Health</span>
+      <span class="pill"><span class="pill-emoji">👶</span> Children &amp; Youth</span>
+      <span class="pill"><span class="pill-emoji">🎓</span> Education</span>
+      <span class="pill"><span class="pill-emoji">👴</span> Seniors &amp; Aging</span>
+      <span class="pill"><span class="pill-emoji">♿</span> Disability &amp; Accessibility</span>
+      <span class="pill"><span class="pill-emoji">👨‍👩‍👧</span> Families &amp; Human Services</span>
+      <span class="pill"><span class="pill-emoji">🔒</span> Justice &amp; Legal Aid</span>
+    </div>
+  </div>
+
+  <div class="cat-group">
+    <div class="cat-group-label">Community &amp; Civic</div>
+    <div class="cat-pills">
+      <span class="pill"><span class="pill-emoji">🤝</span> Volunteering &amp; Civic</span>
+      <span class="pill"><span class="pill-emoji">✊</span> Civil Rights &amp; Advocacy</span>
+      <span class="pill"><span class="pill-emoji">🏘️</span> Community Development</span>
+      <span class="pill"><span class="pill-emoji">🚨</span> Public Safety &amp; Emergency</span>
+      <span class="pill"><span class="pill-emoji">💼</span> Employment &amp; Job Training</span>
+    </div>
+  </div>
+
+  <div class="cat-group">
+    <div class="cat-group-label">Environment &amp; Outdoors</div>
+    <div class="cat-pills">
+      <span class="pill"><span class="pill-emoji">🌿</span> Environment &amp; Conservation</span>
+      <span class="pill"><span class="pill-emoji">🌾</span> Agriculture &amp; Farming</span>
+      <span class="pill active"><span class="pill-emoji">🚴</span> Bikes &amp; Pedestrian</span>
+      <span class="pill"><span class="pill-emoji">🏃</span> Recreation &amp; Sports</span>
+      <span class="pill"><span class="pill-emoji">🐾</span> Animals &amp; Wildlife</span>
+    </div>
+  </div>
+
+  <div class="cat-group">
+    <div class="cat-group-label">Arts &amp; Learning</div>
+    <div class="cat-pills">
+      <span class="pill"><span class="pill-emoji">🎨</span> Arts &amp; Culture</span>
+      <span class="pill"><span class="pill-emoji">🎭</span> Humanities</span>
+      <span class="pill"><span class="pill-emoji">🔬</span> Science &amp; Research</span>
+    </div>
+  </div>
+
+  <div class="cat-group">
+    <div class="cat-group-label">Giving &amp; Support</div>
+    <div class="cat-pills">
+      <span class="pill"><span class="pill-emoji">💛</span> Philanthropy &amp; Grantmaking</span>
+      <span class="pill"><span class="pill-emoji">🌍</span> International &amp; Global</span>
+    </div>
+  </div>
+</div>
+
+<!-- SECONDARY FILTERS -->
+<div class="filters2">
+  <div class="filter-group">
+    <label>Type</label>
+    <select>
+      <option>All types</option>
+      <option>Events</option>
+      <option>Volunteer</option>
+      <option>Fundraisers</option>
+      <option>News</option>
+      <option>Donate</option>
+      <option>Jobs</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>County</label>
+    <select>
+      <option>All counties</option>
+      <option>Addison</option>
+      <option>Bennington</option>
+      <option>Caledonia</option>
+      <option>Chittenden</option>
+      <option>Essex</option>
+      <option>Franklin</option>
+      <option>Grand Isle</option>
+      <option>Lamoille</option>
+      <option>Orange</option>
+      <option>Orleans</option>
+      <option>Rutland</option>
+      <option>Washington</option>
+      <option>Windham</option>
+      <option>Windsor</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>Town</label>
+    <select>
+      <option>All towns</option>
+      <option>Bellows Falls</option>
+      <option>Bennington</option>
+      <option>Burlington</option>
+      <option>Montpelier</option>
+      <option>Vergennes</option>
+      <option>Waterbury</option>
+      <option>Barre</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>Date</label>
+    <select>
+      <option>Any time</option>
+      <option>This week</option>
+      <option>This month</option>
+      <option>Next 3 months</option>
+    </select>
+  </div>
+  <div class="active-filters">
+    <span class="filter-tag">🚴 Bikes &amp; Pedestrian ✕</span>
+    <button class="clear-btn">Clear all</button>
+  </div>
+</div>
+
+<!-- RESULTS BAR -->
+<div class="results-bar">
+  <span class="results-count">14 results · updated today · filtered by: Bikes &amp; Pedestrian</span>
+  <select class="sort-select">
+    <option>Most recent first</option>
+    <option>Soonest events first</option>
+    <option>A–Z by organization</option>
+  </select>
+</div>
+
+<!-- CARDS -->
+<div class="cards">
+
+  <!-- Local Motion -->
+  <div class="card event">
+    <div class="card-top">
+      <div class="card-meta-left">
+        <span class="badge badge-event">Event</span>
+        <span class="card-date">Wed Aug 5</span>
+      </div>
+      <span class="card-location">📍 Burlington · Chittenden</span>
+    </div>
+    <div class="card-title">South End Walk/Bike Forum</div>
+    <div class="card-desc">Join Local Motion for a community forum on walking and biking in Burlington's South End. 5–7pm at 645 Pine St. All welcome.</div>
+    <div class="card-bottom">
+      <span class="card-org">🚴 Local Motion <span class="card-cat">Bikes &amp; Pedestrian</span></span>
+      <a class="card-link" href="https://www.localmotion.org" target="_blank">View details →</a>
+    </div>
+  </div>
+
+  <!-- Local Motion group ride -->
+  <div class="card event">
+    <div class="card-top">
+      <div class="card-meta-left">
+        <span class="badge badge-event">Event</span>
+        <span class="card-date">Ongoing · Weekly</span>
+      </div>
+      <span class="card-location">📍 Burlington · Chittenden</span>
+    </div>
+    <div class="card-title">Commuter Inspirational Group Ride</div>
+    <div class="card-desc">A casual, conversational group ride around Burlington. No-drop — everyone welcome at every pace. Great way to discover the bike path.</div>
+    <div class="card-bottom">
+      <span class="card-org">🚴 Local Motion <span class="card-cat">Bikes &amp; Pedestrian</span></span>
+      <a class="card-link" href="https://www.localmotion.org" target="_blank">View details →</a>
+    </div>
+  </div>
+
+  <!-- Old Spokes Home -->
+  <div class="card event">
+    <div class="card-top">
+      <div class="card-meta-left">
+        <span class="badge badge-event">Event</span>
+        <span class="card-date">Tue Jul 29</span>
+      </div>
+      <span class="card-location">📍 Burlington · Chittenden</span>
+    </div>
+    <div class="card-title">One-Night Stand bike repair clinic</div>
+    <div class="card-desc">Learn basic bike repair skills in one evening. All skill levels welcome. Register via Seven Days Tickets.</div>
+    <div class="card-bottom">
+      <span class="card-org">🚴 Old Spokes Home <span class="card-cat">Bikes &amp; Pedestrian</span></span>
+      <a class="card-link" href="https://www.oldspokeshome.com" target="_blank">View details →</a>
+    </div>
+  </div>
+
+  <!-- Betty's Bikes -->
+  <div class="card volunteer">
+    <div class="card-top">
+      <div class="card-meta-left">
+        <span class="badge badge-volunteer">Volunteer</span>
+        <span class="card-date">Ongoing</span>
+      </div>
+      <span class="card-location">📍 Burlington · Chittenden</span>
+    </div>
+    <div class="card-title">Apprenticeship program — learn bike mechanics</div>
+    <div class="card-desc">Betty's Bikes offers a hands-on apprenticeship program teaching bike repair skills. Applications open now. Located at The Frame on Burlington's waterfront.</div>
+    <div class="card-bottom">
+      <span class="card-org">🚴 Betty's Bikes <span class="card-cat">Bikes &amp; Pedestrian</span></span>
+      <a class="card-link" href="https://www.bettysbikes.org" target="_blank">View details →</a>
+    </div>
+  </div>
+
+  <!-- VMBA -->
+  <div class="card volunteer">
+    <div class="card-top">
+      <div class="card-meta-left">
+        <span class="badge badge-volunteer">Volunteer</span>
+        <span class="card-date">Ongoing</span>
+      </div>
+      <span class="card-location">📍 Waterbury · Washington</span>
+    </div>
+    <div class="card-title">Trail crew volunteers needed statewide</div>
+    <div class="card-desc">Vermont Mountain Bike Association has 29 chapters across the state seeking trail builders and stewards. No experience necessary — training provided.</div>
+    <div class="card-bottom">
+      <span class="card-org">🚴 Vermont Mountain Bike Association <span class="card-cat">Bikes &amp; Pedestrian</span></span>
+      <a class="card-link" href="https://vmba.org" target="_blank">View details →</a>
+    </div>
+  </div>
+
+  <!-- Pride Rides VT -->
+  <div class="card event">
+    <div class="card-top">
+      <div class="card-meta-left">
+        <span class="badge badge-event">Event</span>
+        <span class="card-date">Monthly rides statewide</span>
+      </div>
+      <span class="card-location">📍 Barre · Washington</span>
+    </div>
+    <div class="card-title">Pride Rides VT — inclusive group rides for LGBTQIA+ cyclists</div>
+    <div class="card-desc">Monthly group rides across Vermont welcoming all levels and all identities. Loaner bikes available. A safe, fun space on two wheels.</div>
+    <div class="card-bottom">
+      <span class="card-org">🌈 Pride Rides VT <span class="card-cat">Bikes &amp; Pedestrian</span></span>
+      <a class="card-link" href="https://vtbadv.com/home/vtbadvco/public_html/prideridesvt/" target="_blank">View details →</a>
+    </div>
+  </div>
+
+  <!-- BF Community Bike -->
+  <div class="card volunteer">
+    <div class="card-top">
+      <div class="card-meta-left">
+        <span class="badge badge-volunteer">Volunteer</span>
+        <span class="card-date">Ongoing · Thursdays 3–4:30pm</span>
+      </div>
+      <span class="card-location">📍 Bellows Falls · Windham</span>
+    </div>
+    <div class="card-title">Youth Open Shop — free bike skills for kids</div>
+    <div class="card-desc">Free drop-in time for youth to learn basic bike maintenance. Limit 4 kids per session. Ages 10 and under must be accompanied by an adult.</div>
+    <div class="card-bottom">
+      <span class="card-org">🚴 BF Community Bike Project <span class="card-cat">Bikes &amp; Pedestrian</span></span>
+      <a class="card-link" href="https://bfbike.org" target="_blank">View details →</a>
+    </div>
+  </div>
+
+  <!-- Freeride Montpelier -->
+  <div class="card volunteer">
+    <div class="card-top">
+      <div class="card-meta-left">
+        <span class="badge badge-volunteer">Volunteer</span>
+        <span class="card-date">Ongoing</span>
+      </div>
+      <span class="card-location">📍 Montpelier · Washington</span>
+    </div>
+    <div class="card-title">Donate bikes, parts, money, or your time</div>
+    <div class="card-desc">Freeride Montpelier runs on pay-what-you-can pricing and community support. Help keep bikes accessible to everyone in Montpelier.</div>
+    <div class="card-bottom">
+      <span class="card-org">🚴 Freeride Montpelier <span class="card-cat">Bikes &amp; Pedestrian</span></span>
+      <a class="card-link" href="https://freeridemontpelier.org" target="_blank">View details →</a>
+    </div>
+  </div>
+
+  <!-- Bennington Bike Hub -->
+  <div class="card volunteer">
+    <div class="card-top">
+      <div class="card-meta-left">
+        <span class="badge badge-volunteer">Volunteer</span>
+        <span class="card-date">Ongoing</span>
+      </div>
+      <span class="card-location">📍 Bennington · Bennington</span>
+    </div>
+    <div class="card-title">Ride leaders needed for 2026</div>
+    <div class="card-desc">Lead group rides, help with outreach, or assist with youth programs. Multiple volunteer roles available — training provided, no experience required.</div>
+    <div class="card-bottom">
+      <span class="card-org">🚴 Bennington Bike Hub <span class="card-cat">Bikes &amp; Pedestrian</span></span>
+      <a class="card-link" href="https://ourbikehub.org" target="_blank">View details →</a>
+    </div>
+  </div>
+
+  <!-- Green Mountain Foster Bikes -->
+  <div class="card donate">
+    <div class="card-top">
+      <div class="card-meta-left">
+        <span class="badge badge-donate">Donate</span>
+        <span class="card-date">Ongoing</span>
+      </div>
+      <span class="card-location">📍 Vergennes · Addison</span>
+    </div>
+    <div class="card-title">Give a foster kid a bike — $100 does it all</div>
+    <div class="card-desc">$100 provides a refurbished bike, helmet, pump, lock, and oil for a Vermont foster child. Fully tax deductible.</div>
+    <div class="card-bottom">
+      <span class="card-org">🚴 Green Mountain Foster Bikes <span class="card-cat">Bikes &amp; Pedestrian</span></span>
+      <a class="card-link" href="https://www.greenmountainfosterbikes.org" target="_blank">View details →</a>
+    </div>
+  </div>
+
+</div>
+
+<!-- DIGEST -->
+<div class="digest">
+  <h3>📬 Get the weekly digest</h3>
+  <p>A summary of Vermont nonprofit news, events, and opportunities — every Monday morning, free.</p>
+  <div class="digest-form">
+    <input type="email" placeholder="your@email.com" />
+    <button>Subscribe</button>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  Vermont Nonprofit Pulse, Inc. &nbsp;·&nbsp; Free and open to all Vermonters &nbsp;·&nbsp; vermontnonprofitpulse.org &nbsp;·&nbsp; A Vermont nonprofit
+</div>
+
+</body>
+</html>
