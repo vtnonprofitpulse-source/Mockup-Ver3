@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vermont Nonprofit Pulse — What's happening across Vermont's nonprofits</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #f5f5f5; color: #222; font-size: 15px; }
+
+  .header { background: #fff; border-bottom: 1px solid #ddd; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon { width: 38px; height: 38px; background: #e8f0fe; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .logo-text { font-size: 18px; font-weight: bold; color: #1a56a0; }
+  .logo-sub { font-size: 11px; color: #888; }
+  .nav-btns { display: flex; gap: 8px; }
+  .nav-btn { background: #f0f0f0; border: 1px solid #ddd; border-radius: 6px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: #333; }
+  .alpha-badge { background: #fff3cd; border: 1px solid #ffc107; border-radius: 12px; padding: 3px 10px; font-size: 11px; font-weight: bold; color: #856404; }
+
+  .hero { background: linear-gradient(135deg, #1a3a6b 0%, #2E5E8E 100%); padding: 32px 24px; text-align: center; }
+  .hero h1 { font-size: 24px; font-weight: bold; color: #fff; margin-bottom: 8px; }
+  .hero p { font-size: 14px; color: #c5d5f0; margin-bottom: 20px; }
+  .search-bar { max-width: 540px; margin: 0 auto; display: flex; gap: 0; box-shadow: 0 2px 12px rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; }
+  .search-bar input { flex: 1; padding: 12px 16px; border: none; font-size: 14px; outline: none; }
+  .search-bar button { background: #f59e0b; color: #fff; border: none; padding: 12px 22px; font-size: 14px; font-weight: bold; cursor: pointer; }
+
+  .cat-section { background: #fff; border-bottom: 1px solid #ddd; padding: 16px 24px; }
+  .cat-section-title { font-size: 12px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 14px; }
+  .cat-group { margin-bottom: 14px; }
+  .cat-group-label { font-size: 11px; font-weight: bold; color: #1a56a0; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid #e8f0fe; }
+  .cat-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill { display: inline-flex; align-items: center; gap: 5px; background: #f5f7ff; border: 1px solid #dde4f5; border-radius: 20px; padding: 5px 12px; font-size: 12px; color: #333; cursor: pointer; transition: all 0.15s; }
+  .pill:hover { background: #e8f0fe; border-color: #1a56a0; color: #1a56a0; }
+  .pill.active { background: #1a56a0; border-color: #1a56a0; color: #fff; }
+
+  .filters2 { background: #fafafa; border-bottom: 1px solid #ddd; padding: 12px 24px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .filter-group { display: flex; flex-direction: column; gap: 3px; }
+  .filter-group label { font-size: 11px; color: #888; }
+  .filter-group select { padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: #fff; }
+  .active-filters { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .filter-tag { background: #e8f0fe; color: #1a56a0; font-size: 11px; padding: 3px 10px; border-radius: 12px; cursor: pointer; }
+  .clear-btn { font-size: 12px; color: #888; background: none; border: none; cursor: pointer; text-decoration: underline; }
+
+  .results-bar { padding: 10px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; background: #fff; border-bottom: 1px solid #eee; }
+  .results-count { font-size: 13px; color: #666; }
+  .sort-select { font-size: 12px; padding: 5px 8px; border: 1px solid #ddd; border-radius: 6px; background: #fff; }
+
+  .cards { padding: 16px 24px; display: flex; flex-direction: column; gap: 10px; }
+  .card { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 14px 18px; border-left: 4px solid #ddd; }
+  .card.event { border-left-color: #1a56a0; }
+  .card.volunteer { border-left-color: #1e7e34; }
+  .card.fundraiser { border-left-color: #b45309; }
+  .card.donate { border-left-color: #c0392b; }
+  .card.news { border-left-color: #888; }
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .card-meta-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .badge { font-size: 11px; font-weight: bold; padding: 3px 10px; border-radius: 12px; }
+  .badge-event { background: #e8f0fe; color: #1a56a0; }
+  .badge-volunteer { background: #e6f4ea; color: #1e7e34; }
+  .badge-fundraiser { background: #fff8e1; color: #b45309; }
+  .badge-donate { background: #fce8e8; color: #c0392b; }
+  .badge-news { background: #f0f0f0; color: #555; }
+  .card-date { font-size: 11px; color: #888; }
+  .card-location { font-size: 11px; color: #888; background: #f5f5f5; padding: 2px 8px; border-radius: 10px; }
+  .card-title { font-size: 15px; font-weight: bold; color: #1a1a1a; margin-bottom: 5px; }
+  .card-desc { font-size: 13px; color: #555; line-height: 1.5; margin-bottom: 10px; }
+  .card-bottom { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; }
+  .card-org { font-size: 12px; color: #888; display: flex; align-items: center; gap: 6px; }
+  .card-cat { font-size: 11px; color: #aaa; background: #f5f5f5; padding: 2px 8px; border-radius: 10px; }
+  .card-link { font-size: 12px; color: #1a56a0; text-decoration: none; font-weight: bold; }
+
+  .loading { text-align: center; padding: 40px; color: #888; font-size: 14px; }
+  .no-results { text-align: center; padding: 40px; color: #888; font-size: 14px; }
+
+  .digest { margin: 8px 24px 16px; background: linear-gradient(135deg, #e8f0fe, #f0f7ff); border: 1px solid #c5d5f0; border-radius: 12px; padding: 18px 22px; text-align: center; }
+  .digest h3 { font-size: 16px; font-weight: bold; color: #1a3a6b; margin-bottom: 4px; }
+  .digest p { font-size: 12px; color: #555; margin-bottom: 12px; }
+  .digest-form { display: flex; gap: 8px; max-width: 380px; margin: 0 auto; flex-wrap: wrap; }
+  .digest-form input { flex: 1; min-width: 180px; padding: 9px 12px; border: 1px solid #bcd; border-radius: 6px; font-size: 13px; }
+  .digest-form button { background: #1a56a0; color: #fff; border: none; border-radius: 6px; padding: 9px 18px; font-size: 13px; cursor: pointer; font-weight: bold; }
+
+  .footer { text-align: center; padding: 14px 24px; font-size: 11px; color: #aaa; border-top: 1px solid #eee; background: #fff; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">🌿</div>
+    <div>
+      <div class="logo-text">Vermont Nonprofit Pulse</div>
+      <div class="logo-sub">News · Events · Volunteers · Fundraisers</div>
+    </div>
+  </div>
+  <div class="nav-btns">
+    <span class="alpha-badge">⚗️ Alpha</span>
+    <button class="nav-btn">About</button>
+    <button class="nav-btn">Add your nonprofit</button>
+  </div>
+</div>
+
+<div class="hero">
+  <h1>What's happening across Vermont's nonprofits</h1>
+  <p>Events, volunteer opportunities, fundraisers, and news — all in one place, updated daily</p>
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="🔍   Search by keyword, organization, or topic..." />
+    <button onclick="applyFilters()">Search</button>
+  </div>
+</div>
+
+<div class="cat-section">
+  <div class="cat-section-title">Browse by mission area</div>
+  <div class="cat-group">
+    <div class="cat-group-label">People &amp; Community</div>
+    <div class="cat-pills">
+      <span class="pill" onclick="filterByMission('Food & Hunger')">🥦 Food &amp; Hunger</span>
+      <span class="pill" onclick="filterByMission('Housing & Shelter')">🏠 Housing &amp; Shelter</span>
+      <span class="pill" onclick="filterByMission('Health & Wellness')">❤️ Health &amp; Wellness</span>
+      <span class="pill" onclick="filterByMission('Mental Health')">🧠 Mental Health</span>
+      <span class="pill" onclick="filterByMission('Children & Youth')">👶 Children &amp; Youth</span>
+      <span class="pill" onclick="filterByMission('Education')">🎓 Education</span>
+      <span class="pill" onclick="filterByMission('Seniors & Aging')">👴 Seniors &amp; Aging</span>
+      <span class="pill" onclick="filterByMission('Disability & Accessibility')">♿ Disability &amp; Accessibility</span>
+      <span class="pill" onclick="filterByMission('Families & Human Services')">👨‍👩‍👧 Families &amp; Human Services</span>
+      <span class="pill" onclick="filterByMission('Justice & Legal Aid')">🔒 Justice &amp; Legal Aid</span>
+    </div>
+  </div>
+  <div class="cat-group">
+    <div class="cat-group-label">Community &amp; Civic</div>
+    <div class="cat-pills">
+      <span class="pill" onclick="filterByMission('Volunteering & Civic')">🤝 Volunteering &amp; Civic</span>
+      <span class="pill" onclick="filterByMission('Civil Rights & Advocacy')">✊ Civil Rights &amp; Advocacy</span>
+      <span class="pill" onclick="filterByMission('Community Development')">🏘️ Community Development</span>
+      <span class="pill" onclick="filterByMission('Public Safety & Emergency')">🚨 Public Safety &amp; Emergency</span>
+      <span class="pill" onclick="filterByMission('Employment & Job Training')">💼 Employment &amp; Job Training</span>
+    </div>
+  </div>
+  <div class="cat-group">
+    <div class="cat-group-label">Environment &amp; Outdoors</div>
+    <div class="cat-pills">
+      <span class="pill" onclick="filterByMission('Environment & Conservation')">🌿 Environment &amp; Conservation</span>
+      <span class="pill" onclick="filterByMission('Agriculture & Farming')">🌾 Agriculture &amp; Farming</span>
+      <span class="pill active" onclick="filterByMission('Bikes & Pedestrian')">🚴 Bikes &amp; Pedestrian</span>
+      <span class="pill" onclick="filterByMission('Recreation & Sports')">🏃 Recreation &amp; Sports</span>
+      <span class="pill" onclick="filterByMission('Animals & Wildlife')">🐾 Animals &amp; Wildlife</span>
+    </div>
+  </div>
+  <div class="cat-group">
+    <div class="cat-group-label">Arts &amp; Learning</div>
+    <div class="cat-pills">
+      <span class="pill" onclick="filterByMission('Arts & Culture')">🎨 Arts &amp; Culture</span>
+      <span class="pill" onclick="filterByMission('Humanities')">🎭 Humanities</span>
+      <span class="pill" onclick="filterByMission('Science & Research')">🔬 Science &amp; Research</span>
+    </div>
+  </div>
+  <div class="cat-group">
+    <div class="cat-group-label">Giving &amp; Support</div>
+    <div class="cat-pills">
+      <span class="pill" onclick="filterByMission('Philanthropy & Grantmaking')">💛 Philanthropy &amp; Grantmaking</span>
+      <span class="pill" onclick="filterByMission('International & Global')">🌍 International &amp; Global</span>
+    </div>
+  </div>
+</div>
+
+<div class="filters2">
+  <div class="filter-group">
+    <label>Type</label>
+    <select id="typeFilter" onchange="applyFilters()">
+      <option value="">All types</option>
+      <option value="Event">Events</option>
+      <option value="Volunteer">Volunteer</option>
+      <option value="Fundraiser">Fundraisers</option>
+      <option value="News">News</option>
+      <option value="Donate">Donate</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>County</label>
+    <select id="countyFilter" onchange="applyFilters()">
+      <option value="">All counties</option>
+      <option>Addison</option>
+      <option>Bennington</option>
+      <option>Caledonia</option>
+      <option>Chittenden</option>
+      <option>Essex</option>
+      <option>Franklin</option>
+      <option>Grand Isle</option>
+      <option>Lamoille</option>
+      <option>Orange</option>
+      <option>Orleans</option>
+      <option>Rutland</option>
+      <option>Washington</option>
+      <option>Windham</option>
+      <option>Windsor</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>Town</label>
+    <select id="townFilter" onchange="applyFilters()">
+      <option value="">All towns</option>
+      <option>Barre</option>
+      <option>Bellows Falls</option>
+      <option>Bennington</option>
+      <option>Burlington</option>
+      <option>Montpelier</option>
+      <option>Vergennes</option>
+      <option>Waterbury</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>Date</label>
+    <select id="dateFilter">
+      <option value="">Any time</option>
+      <option value="week">This week</option>
+      <option value="month">This month</option>
+    </select>
+  </div>
+  <div class="active-filters" id="activeTags"></div>
+</div>
+
+<div class="results-bar">
+  <span class="results-count" id="resultsCount">Loading...</span>
+  <select class="sort-select" id="sortSelect" onchange="renderCards()">
+    <option value="newest">Most recent first</option>
+    <option value="org">A–Z by organization</option>
+  </select>
+</div>
+
+<div class="cards" id="cardsContainer">
+  <div class="loading">Loading Vermont nonprofit content...</div>
+</div>
+
+<div class="digest">
+  <h3>📬 Get the weekly digest</h3>
+  <p>A summary of Vermont nonprofit news, events, and opportunities — every Monday morning, free.</p>
+  <div class="digest-form">
+    <input type="email" placeholder="your@email.com" />
+    <button>Subscribe</button>
+  </div>
+</div>
+
+<div class="footer">
+  Vermont Nonprofit Pulse, Inc. &nbsp;·&nbsp; Alpha testing — not yet public &nbsp;·&nbsp; vermontnonprofitpulse.org &nbsp;·&nbsp; A Vermont nonprofit
+</div>
+
+<script>
+  let allData = [];
+  let currentMission = 'Bikes & Pedestrian';
+
+  // Badge colors
+  function getBadgeClass(type) {
+    const t = (type || '').toLowerCase();
+    if (t === 'event') return 'badge-event';
+    if (t === 'volunteer') return 'badge-volunteer';
+    if (t === 'fundraiser') return 'badge-fundraiser';
+    if (t === 'donate') return 'badge-donate';
+    return 'badge-news';
+  }
+
+  function getCardClass(type) {
+    const t = (type || '').toLowerCase();
+    if (t === 'event') return 'event';
+    if (t === 'volunteer') return 'volunteer';
+    if (t === 'fundraiser') return 'fundraiser';
+    if (t === 'donate') return 'donate';
+    return 'news';
+  }
+
+  // Fetch data from API
+  async function fetchData(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const url = `/api/content${query ? '?' + query : ''}`;
+    const response = await fetch(url);
+    const json = await response.json();
+    return json.data || [];
+  }
+
+  // Render cards from data
+  function renderCards(data) {
+    const container = document.getElementById('cardsContainer');
+    const sort = document.getElementById('sortSelect').value;
+
+    let items = data || allData;
+
+    if (sort === 'org') {
+      items = [...items].sort((a, b) => a.organization_name.localeCompare(b.organization_name));
+    }
+
+    if (items.length === 0) {
+      container.innerHTML = '<div class="no-results">No results found — try adjusting your filters.</div>';
+      document.getElementById('resultsCount').textContent = '0 results';
+      return;
+    }
+
+    document.getElementById('resultsCount').textContent = `${items.length} result${items.length !== 1 ? 's' : ''} · updated today`;
+
+    container.innerHTML = items.map(item => `
+      <div class="card ${getCardClass(item.content_type)}">
+        <div class="card-top">
+          <div class="card-meta-left">
+            <span class="badge ${getBadgeClass(item.content_type)}">${item.content_type || 'News'}</span>
+            ${item.event_date ? `<span class="card-date">${new Date(item.event_date).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}</span>` : '<span class="card-date">Ongoing</span>'}
+          </div>
+          <span class="card-location">📍 ${item.town || ''} · ${item.county || ''}</span>
+        </div>
+        <div class="card-title">${item.title || ''}</div>
+        <div class="card-desc">${item.description || ''}</div>
+        <div class="card-bottom">
+          <span class="card-org">🚴 ${item.organization_name} <span class="card-cat">${item.mission_area || ''}</span></span>
+          <a class="card-link" href="${item.source_url || '#'}" target="_blank">View details →</a>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Filter by mission pill
+  async function filterByMission(mission) {
+    document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+    event.target.closest('.pill').classList.add('active');
+    currentMission = mission;
+    updateActiveTags();
+    await loadData();
+  }
+
+  // Update active filter tags
+  function updateActiveTags() {
+    const tags = document.getElementById('activeTags');
+    const parts = [];
+    if (currentMission) parts.push(`<span class="filter-tag" onclick="clearMission()">🚴 ${currentMission} ✕</span>`);
+    if (parts.length > 0) {
+      parts.push(`<button class="clear-btn" onclick="clearAll()">Clear all</button>`);
+    }
+    tags.innerHTML = parts.join('');
+  }
+
+  function clearMission() {
+    currentMission = '';
+    document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+    updateActiveTags();
+    loadData();
+  }
+
+  function clearAll() {
+    currentMission = '';
+    document.getElementById('typeFilter').value = '';
+    document.getElementById('countyFilter').value = '';
+    document.getElementById('townFilter').value = '';
+    document.getElementById('searchInput').value = '';
+    document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+    updateActiveTags();
+    loadData();
+  }
+
+  // Apply dropdown filters
+  async function applyFilters() {
+    await loadData();
+  }
+
+  // Main load function
+  async function loadData() {
+    document.getElementById('cardsContainer').innerHTML = '<div class="loading">Loading...</div>';
+    document.getElementById('resultsCount').textContent = 'Loading...';
+
+    const params = {};
+    if (currentMission) params.mission = currentMission;
+    if (document.getElementById('typeFilter').value) params.type = document.getElementById('typeFilter').value;
+    if (document.getElementById('countyFilter').value) params.county = document.getElementById('countyFilter').value;
+    if (document.getElementById('townFilter').value) params.town = document.getElementById('townFilter').value;
+    if (document.getElementById('searchInput').value) params.search = document.getElementById('searchInput').value;
+
+    try {
+      allData = await fetchData(params);
+      renderCards(allData);
+      updateActiveTags();
+    } catch (error) {
+      document.getElementById('cardsContainer').innerHTML = '<div class="no-results">Error loading data. Please try again.</div>';
+    }
+  }
+
+  // Load on page start with Bikes & Pedestrian selected
+  loadData();
+</script>
+
+</body>
+</html>
