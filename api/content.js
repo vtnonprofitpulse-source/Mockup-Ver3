@@ -1,0 +1,8 @@
+{
+  "name": "vermont-nonprofit-pulse",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@neondatabase/serverless": "^0.9.0"
+  }
+}
