@@ -54,6 +54,14 @@ export default async function handler(req, res) {
           WHEN 'Bellows Falls Community Bike Project' THEN 4
           ELSE 5
         END ASC,
+        CASE LOWER(content_type)
+          WHEN 'fundraiser' THEN 1
+          WHEN 'event' THEN 2
+          WHEN 'volunteer' THEN 3
+          WHEN 'donate' THEN 4
+          WHEN 'news' THEN 5
+          ELSE 6
+        END ASC,
         id DESC
       LIMIT 100
     `;
