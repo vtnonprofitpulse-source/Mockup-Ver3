@@ -68,7 +68,29 @@ def tag_content(raw_text, org_name):
         max_tokens=1000,
         messages=[{
             'role': 'user',
-            'content': f'You are helping build Vermont Nonprofit Pulse. Read this content from {org_name} and extract events, volunteer opportunities, fundraisers, or news items. For each item return: TITLE: [title] TYPE: [Event/Volunteer/Fundraiser/News/Donate] DATE: [date or Ongoing] DESCRIPTION: [2 sentences] --- Content: {raw_text} Only include real specific items. If nothing found say NO ITEMS FOUND.'
+            'content': f'''You are helping build Vermont Nonprofit Pulse, a database of Vermont nonprofit events and opportunities.
+
+Read this content from {org_name} and extract specific events, volunteer opportunities, fundraisers, or news items.
+
+STRICT RULES:
+- Only include items that have a SPECIFIC NAME or TITLE - not just a date
+- Only include items with enough detail to write a meaningful 2-sentence description
+- NEVER create entries like 'Organization has an event on date' or 'further details available elsewhere'
+- NEVER group multiple events into one entry
+- If you only see dates without event names or descriptions, say NO ITEMS FOUND
+- Each item must stand alone as useful information to a Vermont resident
+
+For each qualifying item return EXACTLY this format:
+TITLE: [specific descriptive name of the event or opportunity]
+TYPE: [Event, Volunteer, Fundraiser, News, or Donate]
+DATE: [specific date if mentioned, or Ongoing for recurring programs]
+DESCRIPTION: [2 sentences describing what this is and why someone would want to attend or participate]
+---
+
+Content from {org_name}:
+{raw_text}
+
+Only include items with real specific details. If content is too vague, say NO ITEMS FOUND.'''
         }]
     )
     return message.content[0].text
