@@ -301,10 +301,13 @@ def save_to_database(records, org_name, town, county, mission_area,
                  record.get("description"), town, county, mission_area,
                  source_url, source_hash, "active")
             )
+            conn.commit()
             saved += 1
         except Exception as e:
+            # Reset the connection immediately so one bad record can never
+            # block or wipe out any other record's save in this batch.
+            conn.rollback()
             print(f"  Skipped: {e}")
-    conn.commit()
     if blocked > 0:
         print(f"  Blocked {blocked} records by validation layer")
     return saved
