@@ -7,6 +7,31 @@ import time
 import io
 import hashlib
 import pdfplumber
+import re
+from dateutil import parser as dateutil_parser
+from datetime import datetime
+
+NON_SPECIFIC_DATE_WORDS = {"ongoing", "tbd", "n/a", "none", "unknown", ""}
+
+
+def parse_event_date(date_text):
+    """
+    Convert Claude's free-text DATE field into a real date, or None.
+    Returns None (SQL NULL) for anything that isn't a specific date,
+    rather than ever writing text like 'Ongoing' into a date column.
+    """
+    if not date_text:
+        return None
+    cleaned = date_text.strip().lower()
+    if cleaned in NON_SPECIFIC_DATE_WORDS:
+        return None
+    # Normalize ranges like 'Sept 5-7, 2026' to the start date 'Sept 5, 2026'
+    normalized = re.sub(r'(\d+)\s*-\s*\d+', r'\1', date_text)
+    try:
+        parsed = dateutil_parser.parse(normalized, fuzzy=True, default=datetime.now())
+        return parsed.date()
+    except (ValueError, OverflowError):
+        return None
 
 db_url = os.environ.get("DATABASE_URL", "NOT SET")
 print(f"DATABASE_URL starts with: {db_url[:30]}")
@@ -278,6 +303,8 @@ def parse_results(tagged_text):
                 record["content_type"] = line.replace("TYPE:", "").strip()
             elif line.startswith("DESCRIPTION:"):
                 record["description"] = line.replace("DESCRIPTION:", "").strip()
+            elif line.startswith("DATE:"):
+                record["date_text"] = line.replace("DATE:", "").strip()
         if "title" in record and "content_type" in record:
             records.append(record)
     return records
@@ -292,14 +319,15 @@ def save_to_database(records, org_name, town, county, mission_area,
             blocked += 1
             continue
         try:
+            event_date = parse_event_date(record.get("date_text", ""))
             cursor.execute(
                 "INSERT INTO content (organization_name, content_type, title, "
-                "description, town, county, mission_area, source_url, "
-                "source_hash, status) "
-                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                "description, event_date, town, county, mission_area, "
+                "source_url, source_hash, status) "
+                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                 (org_name, record.get("content_type"), record.get("title"),
-                 record.get("description"), town, county, mission_area,
-                 source_url, source_hash, "active")
+                 record.get("description"), event_date, town, county,
+                 mission_area, source_url, source_hash, "active")
             )
             conn.commit()
             saved += 1
