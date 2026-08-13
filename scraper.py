@@ -289,6 +289,27 @@ def tag_content(raw_text, org_name, org_town):
     return message.content[0].text
 
 
+def normalize_title(title):
+    """Lowercase and strip punctuation/spacing so minor formatting
+    differences (dashes, capitalization, extra spaces) don't create
+    false-different event identities."""
+    t = title.lower()
+    t = re.sub(r'[^a-z0-9]+', ' ', t)
+    t = re.sub(r'\s+', ' ', t).strip()
+    return t
+
+
+def make_event_key(title, event_date):
+    """Build a fingerprint for a real-world event, so the same event
+    scraped from different sources (or the same source on different days)
+    is recognized as one event, not several. Only applies to items with
+    a specific date - undated/recurring items rely on source_hash alone."""
+    if not event_date:
+        return None
+    normalized = normalize_title(title)
+    return make_hash(normalized + "|" + str(event_date))
+
+
 def parse_results(tagged_text):
     records = []
     items = tagged_text.strip().split("---")
@@ -320,14 +341,15 @@ def save_to_database(records, org_name, town, county, mission_area,
             continue
         try:
             event_date = parse_event_date(record.get("date_text", ""))
+            event_key = make_event_key(record.get("title", ""), event_date)
             cursor.execute(
                 "INSERT INTO content (organization_name, content_type, title, "
-                "description, event_date, town, county, mission_area, "
-                "source_url, source_hash, status) "
-                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                "description, event_date, event_key, town, county, "
+                "mission_area, source_url, source_hash, status) "
+                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                 (org_name, record.get("content_type"), record.get("title"),
-                 record.get("description"), event_date, town, county,
-                 mission_area, source_url, source_hash, "active")
+                 record.get("description"), event_date, event_key, town,
+                 county, mission_area, source_url, source_hash, "active")
             )
             conn.commit()
             saved += 1
