@@ -1,8 +1,13 @@
 name: Daily VNP Scraper
 
 on:
+  # NOTE: GitHub's free scheduled workflows typically run 2-2.5 hours late.
+  # 7:30 UTC = 3:30am Eastern nominal trigger, targeting ~6am Eastern actual
+  # completion. Original value was '0 10 * * *' (targeted 6am ET, actually
+  # landed ~8:15-8:30am ET) - revert to that at beta if this schedule ever
+  # becomes less important to hit early.
   schedule:
-    - cron: '0 10 * * *'
+    - cron: '30 7 * * *'
   workflow_dispatch:
 
 jobs:
