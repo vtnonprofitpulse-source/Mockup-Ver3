@@ -144,7 +144,7 @@ def is_vermont_content(title, description, org_town):
     return True
 
 
-def is_valid_record(record, org_town):
+def is_valid_record(record, org_town, event_date=None):
     title = record.get("title", "").strip()
     description = record.get("description", "").strip()
     content_type = record.get("content_type", "").strip().lower()
@@ -164,6 +164,13 @@ def is_valid_record(record, org_town):
         return False
     if not is_vermont_content(title, description, org_town):
         return False
+    # A dated Event or Fundraiser that has already happened should never be
+    # saved - this always means a wrong-date extraction, since real,
+    # currently-listed events on an org's site are never actually in the past.
+    if content_type in ("event", "fundraiser") and event_date is not None:
+        if event_date < datetime.now().date():
+            print(f"  BLOCKED: past date {event_date} for '{title}'")
+            return False
     return True
 
 
@@ -336,11 +343,11 @@ def save_to_database(records, org_name, town, county, mission_area,
     saved = 0
     blocked = 0
     for record in records:
-        if not is_valid_record(record, town):
+        event_date = parse_event_date(record.get("date_text", ""))
+        if not is_valid_record(record, town, event_date):
             blocked += 1
             continue
         try:
-            event_date = parse_event_date(record.get("date_text", ""))
             event_key = make_event_key(record.get("title", ""), event_date)
             cursor.execute(
                 "INSERT INTO content (organization_name, content_type, title, "
