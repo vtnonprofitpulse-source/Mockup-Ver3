@@ -266,6 +266,17 @@
     return 'news';
   }
 
+  // Format a date-only string (e.g. "2026-09-12") without letting the
+  // browser reinterpret it as UTC midnight and shift it a day backward
+  // in Eastern time. Build the date from its own year/month/day instead.
+  function formatEventDate(dateStr) {
+    if (!dateStr) return 'Ongoing';
+    const datePart = dateStr.split('T')[0];
+    const [year, month, day] = datePart.split('-').map(Number);
+    const localDate = new Date(year, month - 1, day);
+    return localDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'});
+  }
+
   // Fetch data from API
   async function fetchData(params = {}) {
     const query = new URLSearchParams(params).toString();
@@ -299,7 +310,7 @@
         <div class="card-top">
           <div class="card-meta-left">
             <span class="badge ${getBadgeClass(item.content_type)}">${item.content_type || 'News'}</span>
-            ${item.event_date ? `<span class="card-date">${new Date(item.event_date).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}</span>` : '<span class="card-date">Ongoing</span>'}
+            ${item.event_date ? `<span class="card-date">${formatEventDate(item.event_date)}</span>` : '<span class="card-date">Ongoing</span>'}
           </div>
           <span class="card-location">📍 ${item.town || ''} · ${item.county || ''}</span>
         </div>
