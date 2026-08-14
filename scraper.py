@@ -182,7 +182,7 @@ def extract_pdf_text(pdf_url):
         with pdfplumber.open(pdf_file) as pdf:
             for page in pdf.pages[:5]:
                 text += page.extract_text() or ""
-        return text[:3000]
+        return text[:4000]
     except Exception:
         return ""
 
@@ -192,7 +192,11 @@ def scrape_website(url):
         headers = {"User-Agent": "VermontNonprofitPulse/1.0"}
         response = requests.get(url, timeout=10, headers=headers)
         soup = BeautifulSoup(response.text, "html.parser")
-        for tag in soup(["script", "style", "nav", "footer"]):
+        # Strip navigation/header/footer boilerplate - many real sites (e.g.
+        # WordPress themes) put large menus in <header> without a <nav> tag,
+        # which previously ate into the truncation budget before any real
+        # content was reached.
+        for tag in soup(["script", "style", "nav", "footer", "header"]):
             tag.decompose()
         text = soup.get_text(separator=" ", strip=True)
         pdf_text = ""
@@ -207,9 +211,13 @@ def scrape_website(url):
                 )
                 print(f"  Found PDF: {full_url}")
                 pdf_text += extract_pdf_text(full_url)
-        combined = text[:2000]
+        # Truncation limits raised substantially (was 2000/page, 5000 total)
+        # - real event calendar pages routinely exceed those limits before
+        # reaching the actual dated content, causing missed and misattributed
+        # events. Claude can easily handle this much more text.
+        combined = text[:6000]
         if pdf_text:
-            combined += "\nPDF CONTENT: " + pdf_text[:2000]
+            combined += "\nPDF CONTENT: " + pdf_text[:3000]
         return combined
     except Exception as e:
         return f"Error: {e}"
@@ -221,7 +229,7 @@ def scrape_multiple_pages(urls):
         text = scrape_website(url)
         if not text.startswith("Error"):
             combined.append(text)
-    return "\n".join(combined)[:5000]
+    return "\n".join(combined)[:15000]
 
 
 def fetch_facebook_posts(facebook_url, limit=20):
@@ -290,7 +298,7 @@ def tag_content(raw_text, org_name, org_town):
     )
     message = client.messages.create(
         model="claude-sonnet-4-6",
-        max_tokens=1500,
+        max_tokens=3000,
         messages=[{"role": "user", "content": prompt}]
     )
     return message.content[0].text
