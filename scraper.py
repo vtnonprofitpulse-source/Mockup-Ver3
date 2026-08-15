@@ -10,6 +10,7 @@ import pdfplumber
 import re
 from dateutil import parser as dateutil_parser
 from datetime import datetime
+from urllib.parse import urljoin, urlparse
 
 NON_SPECIFIC_DATE_WORDS = {"ongoing", "tbd", "n/a", "none", "unknown", ""}
 
@@ -202,6 +203,59 @@ def extract_pdf_text(pdf_url):
         return text[:4000]
     except Exception:
         return ""
+
+
+RELEVANT_LINK_KEYWORDS = [
+    "event", "class", "workshop", "program", "calendar", "ride", "volunteer"
+]
+
+EXCLUDED_LINK_PATTERNS = [
+    "privacy", "terms", "staff", "board", "facebook.com", "twitter.com",
+    "instagram.com", "linkedin.com", "youtube.com", "tiktok.com",
+    "mailto:", "tel:"
+]
+
+MAX_DISCOVERED_LINKS = 5
+
+
+def discover_relevant_links(homepage_url, existing_urls, max_links=MAX_DISCOVERED_LINKS):
+    """Find an organization's own events/classes/programs pages automatically
+    by scanning its homepage for matching links, instead of relying on a
+    person to manually find and hardcode each org's page structure.
+    Same-domain only, one level deep, bounded to max_links - see Gate
+    'Coverage still incomplete' mechanism refinement, August 15 2026."""
+    discovered = []
+    try:
+        headers = {"User-Agent": "VermontNonprofitPulse/1.0"}
+        response = requests.get(homepage_url, timeout=10, headers=headers)
+        soup = BeautifulSoup(response.text, "html.parser")
+        homepage_domain = urlparse(homepage_url).netloc.replace("www.", "")
+
+        seen = set(existing_urls)
+        for link in soup.find_all("a", href=True):
+            if len(discovered) >= max_links:
+                break
+            href = link["href"]
+            link_text = link.get_text(strip=True).lower()
+            href_lower = href.lower()
+
+            if any(pattern in href_lower for pattern in EXCLUDED_LINK_PATTERNS):
+                continue
+
+            full_url = urljoin(homepage_url, href)
+            link_domain = urlparse(full_url).netloc.replace("www.", "")
+            if link_domain != homepage_domain:
+                continue
+
+            if full_url in seen:
+                continue
+
+            if any(kw in href_lower or kw in link_text for kw in RELEVANT_LINK_KEYWORDS):
+                discovered.append(full_url)
+                seen.add(full_url)
+    except Exception:
+        pass
+    return discovered
 
 
 def scrape_website(url):
@@ -495,7 +549,12 @@ print("=== WEBSITE SCRAPING ===")
 for org in website_nonprofits:
     print(f"Processing {org['name']}...")
     try:
-        raw_text, scrape_errors = scrape_multiple_pages(org["urls"])
+        discovered_links = discover_relevant_links(org["urls"][0], org["urls"])
+        if discovered_links:
+            print(f"  Discovered {len(discovered_links)} relevant page(s): {discovered_links}")
+        all_urls = org["urls"] + discovered_links
+
+        raw_text, scrape_errors = scrape_multiple_pages(all_urls)
         if not raw_text:
             error_msg = "; ".join(scrape_errors) if scrape_errors else "No content found on any page"
             print(f"  No content found: {error_msg}")
