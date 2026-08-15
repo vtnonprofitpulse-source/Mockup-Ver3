@@ -398,15 +398,19 @@ def normalize_title(title):
     return t
 
 
-def make_event_key(title, event_date):
-    """Build a fingerprint for a real-world event, so the same event
-    scraped from different sources (or the same source on different days)
-    is recognized as one event, not several. Only applies to items with
-    a specific date - undated/recurring items rely on source_hash alone."""
-    if not event_date:
-        return None
+def make_event_key(title, event_date, org_name):
+    """Build a fingerprint so the same real-world item - dated or
+    undated/recurring - is recognized as one item, not several, no matter
+    how many times or how differently it gets reworded across scrapes.
+    Dated items: title + date. Undated/Ongoing items: title + org, since
+    there's no date to anchor identity - closes the gap where 'Pedals to
+    the People', 'Ride Leaders Needed', and 'Trail Work Night' were each
+    duplicating under slightly different wording (found August 15, 2026)."""
     normalized = normalize_title(title)
-    return make_hash(normalized + "|" + str(event_date))
+    if event_date:
+        return make_hash(normalized + "|" + str(event_date))
+    else:
+        return make_hash(normalized + "|" + org_name.strip().lower() + "|ongoing")
 
 
 def parse_results(tagged_text):
@@ -440,7 +444,7 @@ def save_to_database(records, org_name, town, county, mission_area,
             blocked += 1
             continue
         try:
-            event_key = make_event_key(record.get("title", ""), event_date)
+            event_key = make_event_key(record.get("title", ""), event_date, org_name)
             cursor.execute(
                 "INSERT INTO content (organization_name, content_type, title, "
                 "description, event_date, event_key, town, county, "
