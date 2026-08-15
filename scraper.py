@@ -533,6 +533,10 @@ for org in facebook_nonprofits:
         posts = fetch_facebook_posts(org["facebook_url"], limit=20)
         print(f"  Found {len(posts)} posts")
 
+        if not posts:
+            record_scrape_status(cursor, conn, org["name"], "no_content", "Apify returned zero posts")
+            continue
+
         new_posts = []
         for post in posts:
             post_url = post.get("url", "")
@@ -542,6 +546,7 @@ for org in facebook_nonprofits:
 
         print(f"  {len(new_posts)} new posts not yet in database")
 
+        posts_saved_any = False
         for post, post_hash in new_posts:
             post_text = post.get("text", "")
             if not post_text:
@@ -557,10 +562,16 @@ for org in facebook_nonprofits:
             )
             total_saved += saved
             if saved > 0:
+                posts_saved_any = True
                 print(f"  Saved {saved} records from post")
 
+        record_scrape_status(
+            cursor, conn, org["name"],
+            "ok" if posts_saved_any else "no_items"
+        )
     except Exception as e:
         print(f"  Error: {e}")
+        record_scrape_status(cursor, conn, org["name"], "error", str(e))
 
 cursor.close()
 conn.close()
