@@ -5,7 +5,7 @@ export default async function handler(req, res) {
     const sql = neon(process.env.DATABASE_URL);
     const { type, county, town, mission, search } = req.query;
 
-    let contentQuery = `SELECT c.id, c.organization_name, c.content_type, c.title, c.description, c.town, c.county, c.mission_area, c.source_url, c.event_date, c.status, 'content' as record_type, COALESCE(o2.featured, false) as featured FROM content c LEFT JOIN organizations o2 ON o2.organization_name = c.organization_name WHERE c.status = 'active'`;
+    let contentQuery = `SELECT c.id, c.organization_name, c.content_type, c.title, c.description, c.town, c.county, c.mission_area, c.source_url, c.event_date, c.status, 'content' as record_type, COALESCE(o2.featured, false) as featured FROM content c LEFT JOIN organizations o2 ON o2.organization_name = c.organization_name WHERE c.status = 'active' AND (c.event_date IS NULL OR c.event_date >= CURRENT_DATE)`;
 
     let orgsQuery = `SELECT o.id + 10000 as id, o.organization_name, 'Directory' as content_type, o.organization_name as title, o.mission_statement as description, o.town, o.county, o.mission_area, o.website_url as source_url, NULL as event_date, o.status, 'organization' as record_type, o.featured as featured FROM organizations o WHERE o.status = 'active' AND NOT EXISTS (SELECT 1 FROM content c2 WHERE c2.organization_name = o.organization_name AND c2.status = 'active')`;
 
