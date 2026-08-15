@@ -121,6 +121,22 @@ def make_hash(text):
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+def record_scrape_status(cursor, conn, org_name, status, error_message=None):
+    """Record what happened when we tried to scrape this org, so failures
+    are visible instead of silently disappearing into a log nobody sees.
+    Wrapped defensively so a missing column can never break the real scrape."""
+    try:
+        cursor.execute(
+            "UPDATE organizations SET last_scrape_status = %s, "
+            "last_scrape_error = %s, last_scrape_at = NOW() "
+            "WHERE organization_name = %s",
+            (status, error_message, org_name)
+        )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+
+
 def get_db_connection():
     return psycopg2.connect(os.environ["DATABASE_URL"])
 
@@ -226,11 +242,14 @@ def scrape_website(url):
 
 def scrape_multiple_pages(urls):
     combined = []
+    errors = []
     for url in urls:
         text = scrape_website(url)
-        if not text.startswith("Error"):
+        if text.startswith("Error"):
+            errors.append(f"{url}: {text}")
+        else:
             combined.append(text)
-    return "\n".join(combined)[:15000]
+    return "\n".join(combined)[:15000], errors
 
 
 def fetch_facebook_posts(facebook_url, limit=20):
@@ -475,20 +494,24 @@ print("=== WEBSITE SCRAPING ===")
 for org in website_nonprofits:
     print(f"Processing {org['name']}...")
     try:
-        raw_text = scrape_multiple_pages(org["urls"])
+        raw_text, scrape_errors = scrape_multiple_pages(org["urls"])
         if not raw_text:
-            print("  No content found")
+            error_msg = "; ".join(scrape_errors) if scrape_errors else "No content found on any page"
+            print(f"  No content found: {error_msg}")
+            record_scrape_status(cursor, conn, org["name"], "no_content", error_msg)
             continue
 
         source_hash = make_hash(org["name"] + raw_text)
 
         if hash_exists(cursor, source_hash):
             print("  No changes since last scrape - skipping Claude")
+            record_scrape_status(cursor, conn, org["name"], "unchanged")
             continue
 
         tagged = tag_content(raw_text, org["name"], org["town"])
         if "NO ITEMS FOUND" in tagged:
             print("  No items found")
+            record_scrape_status(cursor, conn, org["name"], "no_items")
             continue
 
         records = parse_results(tagged)
@@ -498,8 +521,10 @@ for org in website_nonprofits:
         )
         total_saved += saved
         print(f"  Saved {saved} new records")
+        record_scrape_status(cursor, conn, org["name"], "ok")
     except Exception as e:
         print(f"  Error: {e}")
+        record_scrape_status(cursor, conn, org["name"], "error", str(e))
 
 print("\n=== FACEBOOK SCRAPING ===")
 for org in facebook_nonprofits:
