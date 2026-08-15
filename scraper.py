@@ -113,7 +113,8 @@ BAD_TITLE_PATTERNS = [
     "community calendar events",
 ]
 
-VALID_TYPES = ["event", "volunteer", "fundraiser", "news", "donate"]
+VALID_TYPES = ["event", "volunteer", "fundraiser", "news", "donate",
+               "employment", "class"]
 
 
 def make_hash(text):
@@ -164,10 +165,10 @@ def is_valid_record(record, org_town, event_date=None):
         return False
     if not is_vermont_content(title, description, org_town):
         return False
-    # A dated Event or Fundraiser that has already happened should never be
-    # saved - this always means a wrong-date extraction, since real,
-    # currently-listed events on an org's site are never actually in the past.
-    if content_type in ("event", "fundraiser") and event_date is not None:
+    # A dated item that has already happened should never be saved (this
+    # always means a wrong-date extraction or stale archived content) -
+    # except News, which is allowed to legitimately reference the past.
+    if content_type != "news" and event_date is not None:
         if event_date < datetime.now().date():
             print(f"  BLOCKED: past date {event_date} for '{title}'")
             return False
@@ -277,7 +278,8 @@ def tag_content(raw_text, org_name, org_town):
     prompt = (
         "You are helping build Vermont Nonprofit Pulse, a Vermont-only nonprofit aggregator. "
         "Read this content from " + org_name + " based in " + org_town + ", Vermont. "
-        "Extract specific named events, volunteer opportunities, fundraisers, or news items. "
+        "Extract specific named events, volunteer opportunities, fundraisers, "
+        "news items, paid job postings, or classes/workshops/trainings. "
         "STRICT RULES: "
         "1. Only include items that take place in Vermont or directly benefit Vermont residents. "
         "2. Skip any events in other states. "
@@ -287,9 +289,17 @@ def tag_content(raw_text, org_name, org_town):
         "6. Never group multiple events into one entry. "
         "7. If an item only has a date with no name skip it. "
         "8. Extract specific dates when mentioned - never mark a dated event as Ongoing. "
+        "9. If the content lists multiple items close together, be careful to pair "
+        "each date only with its own specific item - never reuse a nearby item's "
+        "date for a different item. "
+        "10. Employment means a paid staff position or paid apprenticeship only. "
+        "Volunteer means an unpaid opportunity - ride leaders, event volunteers, "
+        "and similar unpaid roles are always Volunteer, never Employment. "
+        "11. Class means a class, workshop, training, or skill-building session "
+        "(e.g. a bike repair class or earn-a-bike program), whether one-time or recurring. "
         "For each qualifying item return: "
         "TITLE: [specific name] "
-        "TYPE: [Event/Volunteer/Fundraiser/News/Donate] "
+        "TYPE: [Event/Volunteer/Fundraiser/News/Donate/Employment/Class] "
         "DATE: [specific date if mentioned, or Ongoing only for truly recurring programs] "
         "DESCRIPTION: [2 sentences with real details] "
         "--- "
