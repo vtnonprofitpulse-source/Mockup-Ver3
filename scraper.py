@@ -15,21 +15,54 @@ from urllib.parse import urljoin, urlparse
 NON_SPECIFIC_DATE_WORDS = {"ongoing", "tbd", "n/a", "none", "unknown", ""}
 
 
+MONTH_NAMES_PATTERN = (
+    r'(January|February|March|April|May|June|July|August|September|'
+    r'October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)'
+)
+
+
+def extract_clean_date_phrase(text):
+    """Find just the date itself within a longer sentence, so fuzzy parsing
+    never has to guess which number is the date - fixes a real bug where
+    ordinal numbers in an event's own name (e.g. '21st Annual...') were
+    being misread as the day/year (Aug 16, 2026: Kelly Brush Ride parsed
+    as 2012-09-21 instead of 2026-09-12)."""
+    pattern = re.compile(
+        MONTH_NAMES_PATTERN + r'\.?\s+(\d{1,2})(?:st|nd|rd|th)?(?:\s*[-\u2013]\s*\d{1,2})?,?\s*(\d{4})?',
+        re.IGNORECASE
+    )
+    m = pattern.search(text)
+    if m:
+        month, day, year = m.group(1), m.group(2), m.group(3)
+        return f"{month} {day}, {year}" if year else f"{month} {day}"
+    numeric_pattern = re.compile(r'\b(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})\b')
+    m2 = numeric_pattern.search(text)
+    if m2:
+        return m2.group(0)
+    return None
+
+
 def parse_event_date(date_text):
     """
     Convert Claude's free-text DATE field into a real date, or None.
     Returns None (SQL NULL) for anything that isn't a specific date,
     rather than ever writing text like 'Ongoing' into a date column.
+    Extracts a clean, isolated date phrase first rather than fuzzy-parsing
+    a whole sentence, and rejects implausible results (>2 years off) as
+    a safety net rather than trusting a clearly-wrong parse.
     """
     if not date_text:
         return None
     cleaned = date_text.strip().lower()
     if cleaned in NON_SPECIFIC_DATE_WORDS:
         return None
-    # Normalize ranges like 'Sept 5-7, 2026' to the start date 'Sept 5, 2026'
-    normalized = re.sub(r'(\d+)\s*-\s*\d+', r'\1', date_text)
+    clean_phrase = extract_clean_date_phrase(date_text)
+    if not clean_phrase:
+        return None
     try:
-        parsed = dateutil_parser.parse(normalized, fuzzy=True, default=datetime.now())
+        parsed = dateutil_parser.parse(clean_phrase, fuzzy=False, default=datetime.now())
+        if abs((parsed.date() - datetime.now().date()).days) > 730:
+            return None
         return parsed.date()
     except (ValueError, OverflowError):
         return None
