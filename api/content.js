@@ -49,6 +49,8 @@ export default async function handler(req, res) {
       ORDER BY 
         featured DESC,
         organization_name ASC,
+        (event_date IS NULL) ASC,
+        event_date ASC,
         CASE LOWER(content_type)
           WHEN 'fundraiser' THEN 1
           WHEN 'event' THEN 2
