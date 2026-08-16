@@ -421,7 +421,9 @@ def fetch_facebook_posts(facebook_url, limit=20):
 
 def tag_content(raw_text, org_name, org_town):
     client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+    today_str = datetime.now().strftime("%B %d, %Y")
     prompt = (
+        "Today's date is " + today_str + ". "
         "You are helping build Vermont Nonprofit Pulse, a Vermont-only nonprofit aggregator. "
         "Read this content from " + org_name + " based in " + org_town + ", Vermont. "
         "Extract specific named events, volunteer opportunities, fundraisers, "
@@ -435,6 +437,10 @@ def tag_content(raw_text, org_name, org_town):
         "6. Never group multiple events into one entry. "
         "7. If an item only has a date with no name skip it. "
         "8. Extract specific dates when mentioned - never mark a dated event as Ongoing. "
+        "8b. If a date is mentioned without a year (e.g. 'Saturday, September 12'), "
+        "use today's actual date above to determine the year: use this year if that date "
+        "hasn't happened yet this year, or next year if it has already passed. Never guess "
+        "a year based on anything other than today's actual date given above. "
         "9. If the content lists multiple items close together, be careful to pair "
         "each date only with its own specific item - never reuse a nearby item's "
         "date for a different item. "
