@@ -375,10 +375,14 @@ def tag_content(raw_text, org_name, org_town):
         "that counts as a specific date even if it isn't labeled as an event date - use the "
         "first/start date of that range as DATE. Only use Ongoing when no specific date or "
         "date range appears anywhere in the content for that item. "
+        "13. If you provide a DATE, you must also quote the exact short phrase from the "
+        "content that states that date, word-for-word, as DATE_EVIDENCE. This must be a "
+        "verbatim quote copied exactly from the content, not a paraphrase. Leave blank if DATE is Ongoing. "
         "For each qualifying item return: "
         "TITLE: [specific name] "
         "TYPE: [Event/Volunteer/Fundraiser/News/Donate/Employment/Class] "
         "DATE: [specific date if mentioned, or Ongoing only for truly recurring programs] "
+        "DATE_EVIDENCE: [exact verbatim phrase from the content stating this date, or blank if Ongoing] "
         "DESCRIPTION: [2 sentences with real details] "
         "--- "
         "Content: " + raw_text + " "
@@ -418,6 +422,56 @@ def make_event_key(title, event_date, org_name):
         return make_hash(normalized + "|" + org_name.strip().lower() + "|ongoing")
 
 
+def normalize_ws(text):
+    return re.sub(r'\s+', ' ', text).strip().lower()
+
+
+def verify_date_attribution(records, raw_text):
+    """Deterministic check that each record's date actually belongs to it,
+    not a nearby item - catches misattribution like STP/Trail Work Night
+    (Aug 15, 2026). Requires Claude's DATE_EVIDENCE quote to appear verbatim
+    in the source, and to belong to this item in reading order (the title
+    that most recently preceded the evidence) - not just whichever title is
+    numerically closest, which was tested and found unreliable."""
+    raw_norm = normalize_ws(raw_text)
+    title_positions = []
+    for r in records:
+        title = r.get("title", "").strip()
+        pos = raw_norm.find(normalize_ws(title)[:40]) if title else -1
+        title_positions.append(pos)
+
+    for i, record in enumerate(records):
+        date_text = record.get("date_text", "").strip()
+        evidence = record.get("date_evidence", "").strip()
+        if not date_text:
+            continue
+        if not evidence:
+            print(f"  DATE VERIFICATION: no evidence for '{record.get('title')}' - clearing date")
+            record["date_text"] = ""
+            continue
+        evidence_norm = normalize_ws(evidence)
+        occurrences = [m.start() for m in re.finditer(re.escape(evidence_norm), raw_norm)]
+        if not occurrences:
+            print(f"  DATE VERIFICATION: evidence not found verbatim for "
+                  f"'{record.get('title')}' - clearing date")
+            record["date_text"] = ""
+            continue
+        confirmed = False
+        for occ in occurrences:
+            preceding = [(tp, idx) for idx, tp in enumerate(title_positions) if tp != -1 and tp <= occ]
+            if not preceding:
+                continue
+            owner_idx = max(preceding, key=lambda x: x[0])[1]
+            if owner_idx == i:
+                confirmed = True
+                break
+        if not confirmed:
+            print(f"  DATE VERIFICATION: evidence for '{record.get('title')}' "
+                  f"belongs to a different item - clearing date")
+            record["date_text"] = ""
+    return records
+
+
 def parse_results(tagged_text):
     records = []
     items = tagged_text.strip().split("---")
@@ -432,6 +486,8 @@ def parse_results(tagged_text):
                 record["content_type"] = line.replace("TYPE:", "").strip()
             elif line.startswith("DESCRIPTION:"):
                 record["description"] = line.replace("DESCRIPTION:", "").strip()
+            elif line.startswith("DATE_EVIDENCE:"):
+                record["date_evidence"] = line.replace("DATE_EVIDENCE:", "").strip()
             elif line.startswith("DATE:"):
                 record["date_text"] = line.replace("DATE:", "").strip()
         if "title" in record and "content_type" in record:
@@ -584,6 +640,7 @@ for org in website_nonprofits:
             continue
 
         records = parse_results(tagged)
+        records = verify_date_attribution(records, raw_text)
         saved = save_to_database(
             records, org["name"], org["town"], org["county"],
             org["mission"], org["source_url"], source_hash, cursor, conn
@@ -624,6 +681,7 @@ for org in facebook_nonprofits:
             if "NO ITEMS FOUND" in tagged:
                 continue
             records = parse_results(tagged)
+            records = verify_date_attribution(records, post_text)
             saved = save_to_database(
                 records, org["name"], org["town"], org["county"],
                 org["mission"], post.get("url", org["source_url"]),
