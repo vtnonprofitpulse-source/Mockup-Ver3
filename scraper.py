@@ -486,6 +486,29 @@ def normalize_title(title):
     return t
 
 
+def make_series_key(title, org_name):
+    """Fingerprint for 'this recurring thing' independent of any specific
+    date - used to recognize when a new dated occurrence (e.g. this week's
+    Trail Work Night) is really the same recurring series as a previously
+    saved occurrence, so the date gets updated in place instead of piling
+    up a new row every time a new occurrence's page gets discovered.
+    Generic - works for any org's recurring events automatically, no
+    per-org configuration (August 16, 2026)."""
+    normalized = normalize_title(title)
+    return make_hash(normalized + "|" + org_name.strip().lower())
+
+
+def find_existing_series_row(cursor, series_key):
+    """Find an existing active, dated row for this recurring series, if any."""
+    cursor.execute(
+        "SELECT id FROM content WHERE series_key = %s AND status = 'active' "
+        "AND event_date IS NOT NULL LIMIT 1",
+        (series_key,)
+    )
+    row = cursor.fetchone()
+    return row[0] if row else None
+
+
 def make_event_key(title, event_date, org_name):
     """Build a fingerprint so the same real-world item - dated or
     undated/recurring - is recognized as one item, not several, no matter
@@ -577,22 +600,44 @@ def parse_results(tagged_text):
 def save_to_database(records, org_name, town, county, mission_area,
                      source_url, source_hash, cursor, conn):
     saved = 0
+    updated = 0
     blocked = 0
     for record in records:
         event_date = parse_event_date(record.get("date_text", ""))
         if not is_valid_record(record, town, event_date):
             blocked += 1
             continue
+        series_key = make_series_key(record.get("title", ""), org_name)
+        event_key = make_event_key(record.get("title", ""), event_date, org_name)
+
+        if event_date:
+            existing_id = find_existing_series_row(cursor, series_key)
+            if existing_id:
+                try:
+                    cursor.execute(
+                        "UPDATE content SET event_date = %s, description = %s, "
+                        "title = %s, source_url = %s, source_hash = %s, "
+                        "event_key = %s WHERE id = %s",
+                        (event_date, record.get("description"), record.get("title"),
+                         source_url, source_hash, event_key, existing_id)
+                    )
+                    conn.commit()
+                    updated += 1
+                    continue
+                except Exception as e:
+                    conn.rollback()
+                    print(f"  Skipped (update): {e}")
+                    continue
+
         try:
-            event_key = make_event_key(record.get("title", ""), event_date, org_name)
             cursor.execute(
                 "INSERT INTO content (organization_name, content_type, title, "
-                "description, event_date, event_key, town, county, "
+                "description, event_date, event_key, series_key, town, county, "
                 "mission_area, source_url, source_hash, status) "
-                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                 (org_name, record.get("content_type"), record.get("title"),
-                 record.get("description"), event_date, event_key, town,
-                 county, mission_area, source_url, source_hash, "active")
+                 record.get("description"), event_date, event_key, series_key,
+                 town, county, mission_area, source_url, source_hash, "active")
             )
             conn.commit()
             saved += 1
@@ -603,6 +648,8 @@ def save_to_database(records, org_name, town, county, mission_area,
             print(f"  Skipped: {e}")
     if blocked > 0:
         print(f"  Blocked {blocked} records by validation layer")
+    if updated > 0:
+        print(f"  Updated {updated} recurring occurrence(s) in place")
     return saved
 
 
