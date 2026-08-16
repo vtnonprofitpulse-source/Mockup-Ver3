@@ -287,6 +287,58 @@
     return localDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'});
   }
 
+  // Compute the next real occurrence of a recurring pattern (e.g.
+  // 'weekly:tuesday' or 'monthly:3rd:sunday'), fresh on every page load -
+  // never stale, since it's calculated live rather than stored.
+  const DAY_NAMES = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+  const POSITION_INDEX = {'1st': 0, '2nd': 1, '3rd': 2, '4th': 3};
+
+  function computeNextOccurrence(pattern) {
+    if (!pattern) return null;
+    const parts = pattern.split(':');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (parts[0] === 'weekly' && parts.length === 2) {
+      const targetDay = DAY_NAMES.indexOf(parts[1]);
+      if (targetDay === -1) return null;
+      const result = new Date(today);
+      let daysUntil = (targetDay - today.getDay() + 7) % 7;
+      result.setDate(today.getDate() + daysUntil);
+      return result;
+    }
+
+    if (parts[0] === 'monthly' && parts.length === 3) {
+      const position = parts[1];
+      const targetDay = DAY_NAMES.indexOf(parts[2]);
+      if (targetDay === -1) return null;
+      if (position !== 'last' && !(position in POSITION_INDEX)) return null;
+
+      function nthWeekdayOfMonth(year, month) {
+        if (position === 'last') {
+          const lastDay = new Date(year, month + 1, 0);
+          const offset = (lastDay.getDay() - targetDay + 7) % 7;
+          lastDay.setDate(lastDay.getDate() - offset);
+          return lastDay;
+        }
+        const firstDay = new Date(year, month, 1);
+        const offset = (targetDay - firstDay.getDay() + 7) % 7;
+        const day = 1 + offset + POSITION_INDEX[position] * 7;
+        const candidate = new Date(year, month, day);
+        return candidate.getMonth() === month ? candidate : null;
+      }
+
+      let candidate = nthWeekdayOfMonth(today.getFullYear(), today.getMonth());
+      if (!candidate || candidate < today) {
+        const nextMonth = today.getMonth() + 1;
+        const year = today.getFullYear() + (nextMonth > 11 ? 1 : 0);
+        candidate = nthWeekdayOfMonth(year, nextMonth % 12);
+      }
+      return candidate;
+    }
+    return null;
+  }
+
   // Fetch data from API
   async function fetchData(params = {}) {
     const query = new URLSearchParams(params).toString();
@@ -320,7 +372,12 @@
         <div class="card-top">
           <div class="card-meta-left">
             <span class="badge ${getBadgeClass(item.content_type)}">${item.content_type || 'News'}</span>
-            ${item.event_date ? `<span class="card-date">${formatEventDate(item.event_date)}</span>` : '<span class="card-date">Ongoing</span>'}
+            ${item.event_date ? `<span class="card-date">${formatEventDate(item.event_date)}</span>` : (() => {
+              const next = computeNextOccurrence(item.recurrence_pattern);
+              return next
+                ? `<span class="card-date">Ongoing &middot; Next: ${next.toLocaleDateString('en-US', {month: 'short', day: 'numeric'})}</span>`
+                : '<span class="card-date">Ongoing</span>';
+            })()}
           </div>
           <span class="card-location">📍 ${item.town || ''} · ${item.county || ''}</span>
         </div>
