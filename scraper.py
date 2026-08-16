@@ -640,7 +640,6 @@ for org in website_nonprofits:
             continue
 
         records = parse_results(tagged)
-        records = verify_date_attribution(records, raw_text)
         saved = save_to_database(
             records, org["name"], org["town"], org["county"],
             org["mission"], org["source_url"], source_hash, cursor, conn
@@ -681,7 +680,6 @@ for org in facebook_nonprofits:
             if "NO ITEMS FOUND" in tagged:
                 continue
             records = parse_results(tagged)
-            records = verify_date_attribution(records, post_text)
             saved = save_to_database(
                 records, org["name"], org["town"], org["county"],
                 org["mission"], post.get("url", org["source_url"]),
