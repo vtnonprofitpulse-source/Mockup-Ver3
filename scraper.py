@@ -216,6 +216,10 @@ EXCLUDED_LINK_PATTERNS = [
 ]
 
 MAX_DISCOVERED_LINKS = 5
+LEVEL2_MAX_PAGES_TO_EXPAND = 2
+LEVEL2_MAX_LINKS_PER_PAGE = 3
+LEVEL2_TOTAL_CAP = 6
+MAX_TOTAL_EXTRA_LINKS = 10
 
 
 def discover_relevant_links(homepage_url, existing_urls, max_links=MAX_DISCOVERED_LINKS):
@@ -256,6 +260,33 @@ def discover_relevant_links(homepage_url, existing_urls, max_links=MAX_DISCOVERE
     except Exception:
         pass
     return discovered
+
+
+def discover_all_relevant_links(org_urls, max_total_extra=MAX_TOTAL_EXTRA_LINKS):
+    """Two-level discovery: first find relevant pages linked from the org's
+    homepage (e.g. an 'Events' listing page), then look one level deeper
+    from those pages for individual item pages (e.g. VMBA's own
+    /event/velo-stowe/ page) - where the cleanest, most unambiguous single-
+    event data actually lives, per the 'Coverage still incomplete' finding.
+    Bounded at every level: at most LEVEL2_MAX_PAGES_TO_EXPAND level-1 pages
+    are expanded further, at most LEVEL2_TOTAL_CAP level-2 links are added,
+    and the combined total never exceeds max_total_extra - cost stays
+    predictable and identical in shape for every organization."""
+    seen = set(org_urls)
+    level1_links = discover_relevant_links(org_urls[0], seen, max_links=MAX_DISCOVERED_LINKS)
+    seen.update(level1_links)
+
+    level2_links = []
+    for url in level1_links[:LEVEL2_MAX_PAGES_TO_EXPAND]:
+        if len(level2_links) >= LEVEL2_TOTAL_CAP:
+            break
+        links = discover_relevant_links(url, seen, max_links=LEVEL2_MAX_LINKS_PER_PAGE)
+        for l in links:
+            if l not in seen and len(level2_links) < LEVEL2_TOTAL_CAP:
+                level2_links.append(l)
+                seen.add(l)
+
+    return (level1_links + level2_links)[:max_total_extra]
 
 
 def scrape_website(url):
@@ -614,7 +645,7 @@ print("=== WEBSITE SCRAPING ===")
 for org in website_nonprofits:
     print(f"Processing {org['name']}...")
     try:
-        discovered_links = discover_relevant_links(org["urls"][0], org["urls"])
+        discovered_links = discover_all_relevant_links(org["urls"])
         if discovered_links:
             print(f"  Discovered {len(discovered_links)} relevant page(s): {discovered_links}")
         all_urls = org["urls"] + discovered_links
