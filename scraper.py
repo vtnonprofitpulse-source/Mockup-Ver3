@@ -457,11 +457,20 @@ def tag_content(raw_text, org_name, org_town):
         "13. If you provide a DATE, you must also quote the exact short phrase from the "
         "content that states that date, word-for-word, as DATE_EVIDENCE. This must be a "
         "verbatim quote copied exactly from the content, not a paraphrase. Leave blank if DATE is Ongoing. "
+        "14. If DATE is Ongoing and the content states a clear recurring day-of-week pattern "
+        "(for example 'every Tuesday', 'every Monday evening', 'the 3rd Sunday of the month', "
+        "'last Thursday of each month'), also provide RECURRENCE in exactly this format and "
+        "nothing else: for weekly patterns write 'weekly:DAY' (e.g. 'weekly:tuesday'); for "
+        "monthly patterns write 'monthly:POSITION:DAY' where POSITION is 1st, 2nd, 3rd, 4th, "
+        "or last (e.g. 'monthly:3rd:sunday'). DAY must be a full lowercase day name (monday "
+        "through sunday). If the pattern is unclear, irregular, or doesn't fit this exact "
+        "format, leave RECURRENCE blank rather than guessing - never invent a pattern. "
         "For each qualifying item return: "
         "TITLE: [specific name] "
         "TYPE: [Event/Volunteer/Fundraiser/News/Donate/Employment/Class] "
         "DATE: [specific date if mentioned, or Ongoing only for truly recurring programs] "
         "DATE_EVIDENCE: [exact verbatim phrase from the content stating this date, or blank if Ongoing] "
+        "RECURRENCE: [weekly:day or monthly:position:day format, or blank] "
         "DESCRIPTION: [2 sentences with real details] "
         "--- "
         "Content: " + raw_text + " "
@@ -574,6 +583,32 @@ def verify_date_attribution(records, raw_text):
     return records
 
 
+VALID_DAYS = {"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"}
+VALID_POSITIONS = {"1st", "2nd", "3rd", "4th", "last"}
+
+
+def validate_recurrence_pattern(raw):
+    """Strictly validate a recurrence pattern against the exact closed
+    format - anything not matching is discarded (returns None), never
+    partially trusted or guessed at. This is the safety net: even if
+    Claude's day-of-week judgment is imperfect, an invalid pattern just
+    means no 'next occurrence' feature for that item (falls back to plain
+    Ongoing, today's existing safe behavior) - never a wrong computed date."""
+    if not raw:
+        return None
+    raw = raw.strip().lower()
+    parts = raw.split(":")
+    if len(parts) == 2 and parts[0] == "weekly":
+        if parts[1] in VALID_DAYS:
+            return raw
+        return None
+    if len(parts) == 3 and parts[0] == "monthly":
+        if parts[1] in VALID_POSITIONS and parts[2] in VALID_DAYS:
+            return raw
+        return None
+    return None
+
+
 def parse_results(tagged_text):
     records = []
     items = tagged_text.strip().split("---")
@@ -590,6 +625,8 @@ def parse_results(tagged_text):
                 record["description"] = line.replace("DESCRIPTION:", "").strip()
             elif line.startswith("DATE_EVIDENCE:"):
                 record["date_evidence"] = line.replace("DATE_EVIDENCE:", "").strip()
+            elif line.startswith("RECURRENCE:"):
+                record["recurrence_raw"] = line.replace("RECURRENCE:", "").strip()
             elif line.startswith("DATE:"):
                 record["date_text"] = line.replace("DATE:", "").strip()
         if "title" in record and "content_type" in record:
@@ -609,6 +646,7 @@ def save_to_database(records, org_name, town, county, mission_area,
             continue
         series_key = make_series_key(record.get("title", ""), org_name)
         event_key = make_event_key(record.get("title", ""), event_date, org_name)
+        recurrence_pattern = validate_recurrence_pattern(record.get("recurrence_raw", ""))
 
         if event_date:
             existing_id = find_existing_series_row(cursor, series_key)
@@ -632,12 +670,13 @@ def save_to_database(records, org_name, town, county, mission_area,
         try:
             cursor.execute(
                 "INSERT INTO content (organization_name, content_type, title, "
-                "description, event_date, event_key, series_key, town, county, "
-                "mission_area, source_url, source_hash, status) "
-                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                "description, event_date, event_key, series_key, recurrence_pattern, "
+                "town, county, mission_area, source_url, source_hash, status) "
+                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                 (org_name, record.get("content_type"), record.get("title"),
                  record.get("description"), event_date, event_key, series_key,
-                 town, county, mission_area, source_url, source_hash, "active")
+                 recurrence_pattern, town, county, mission_area, source_url,
+                 source_hash, "active")
             )
             conn.commit()
             saved += 1
