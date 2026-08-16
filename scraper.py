@@ -276,8 +276,17 @@ def discover_all_relevant_links(org_urls, max_total_extra=MAX_TOTAL_EXTRA_LINKS)
     level1_links = discover_relevant_links(org_urls[0], seen, max_links=MAX_DISCOVERED_LINKS)
     seen.update(level1_links)
 
+    # Expansion candidates for level 2: freshly-discovered pages AND the
+    # org's own pre-configured URLs beyond the homepage (e.g. an
+    # already-known events listing page like VMBA's /events/) - both are
+    # good places to find individual item sub-links.
+    expansion_candidates = (
+        level1_links[:LEVEL2_MAX_PAGES_TO_EXPAND]
+        + org_urls[1:1 + LEVEL2_MAX_PAGES_TO_EXPAND]
+    )
+
     level2_links = []
-    for url in level1_links[:LEVEL2_MAX_PAGES_TO_EXPAND]:
+    for url in expansion_candidates:
         if len(level2_links) >= LEVEL2_TOTAL_CAP:
             break
         links = discover_relevant_links(url, seen, max_links=LEVEL2_MAX_LINKS_PER_PAGE)
