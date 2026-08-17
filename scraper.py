@@ -26,7 +26,10 @@ def extract_clean_date_phrase(text):
     never has to guess which number is the date - fixes a real bug where
     ordinal numbers in an event's own name (e.g. '21st Annual...') were
     being misread as the day/year (Aug 16, 2026: Kelly Brush Ride parsed
-    as 2012-09-21 instead of 2026-09-12)."""
+    as 2012-09-21 instead of 2026-09-12).
+    Returns (phrase, has_explicit_year) - the year-explicit flag matters
+    because a year we have to infer needs a much tighter trust bound than
+    a year the source actually stated (see parse_event_date)."""
     pattern = re.compile(
         MONTH_NAMES_PATTERN + r'\.?\s+(\d{1,2})(?:st|nd|rd|th)?(?:\s*[-\u2013]\s*\d{1,2})?,?\s*(\d{4})?',
         re.IGNORECASE
@@ -34,12 +37,13 @@ def extract_clean_date_phrase(text):
     m = pattern.search(text)
     if m:
         month, day, year = m.group(1), m.group(2), m.group(3)
-        return f"{month} {day}, {year}" if year else f"{month} {day}"
+        phrase = f"{month} {day}, {year}" if year else f"{month} {day}"
+        return phrase, bool(year)
     numeric_pattern = re.compile(r'\b(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})\b')
     m2 = numeric_pattern.search(text)
     if m2:
-        return m2.group(0)
-    return None
+        return m2.group(0), True
+    return None, False
 
 
 def parse_event_date(date_text):
@@ -48,20 +52,28 @@ def parse_event_date(date_text):
     Returns None (SQL NULL) for anything that isn't a specific date,
     rather than ever writing text like 'Ongoing' into a date column.
     Extracts a clean, isolated date phrase first rather than fuzzy-parsing
-    a whole sentence, and rejects implausible results (>2 years off) as
-    a safety net rather than trusting a clearly-wrong parse.
+    a whole sentence. Caps any date more than ~6 months out uniformly,
+    regardless of whether the year appeared to be explicit in the source -
+    fixes a real bug (Aug 16, 2026) where stale Facebook posts got dated a
+    full year into the future. Deliberately does NOT trust Claude's own
+    apparent 'explicit year' more loosely, since we can't verify that claim
+    is honest rather than a confident-looking wrong guess - a blunt,
+    uniform cap is safer than a clever distinction that assumes good faith.
     """
     if not date_text:
         return None
     cleaned = date_text.strip().lower()
     if cleaned in NON_SPECIFIC_DATE_WORDS:
         return None
-    clean_phrase = extract_clean_date_phrase(date_text)
+    clean_phrase, has_explicit_year = extract_clean_date_phrase(date_text)
     if not clean_phrase:
         return None
     try:
         parsed = dateutil_parser.parse(clean_phrase, fuzzy=False, default=datetime.now())
-        if abs((parsed.date() - datetime.now().date()).days) > 730:
+        delta_days = (parsed.date() - datetime.now().date()).days
+        if delta_days > 180:
+            return None
+        if abs(delta_days) > 730:
             return None
         return parsed.date()
     except (ValueError, OverflowError):
