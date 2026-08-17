@@ -769,6 +769,13 @@ facebook_nonprofits = [
         "mission": "Bikes & Pedestrian",
         "source_url": "https://www.localmotion.org"
     },
+    {
+        "name": "Pride Rides VT",
+        "facebook_url": "https://www.facebook.com/PrideRidesVT/",
+        "town": "Barre", "county": "Washington",
+        "mission": "Bikes & Pedestrian",
+        "source_url": "https://prideridesvt.com/"
+    },
 ]
 
 total_saved = 0
