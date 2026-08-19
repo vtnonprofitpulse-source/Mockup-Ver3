@@ -178,7 +178,12 @@ def make_hash(text):
 def record_scrape_status(cursor, conn, org_name, status, error_message=None):
     """Record what happened when we tried to scrape this org, so failures
     are visible instead of silently disappearing into a log nobody sees.
-    Wrapped defensively so a missing column can never break the real scrape."""
+    Wrapped defensively so a missing column can never break the real scrape.
+    Also defensive against the connection itself being dead (e.g. a dropped
+    SSL connection) - a failed rollback attempt on a dead connection used to
+    cascade into an uncaught exception that crashed the whole script instead
+    of just skipping this one status log (confirmed real recurrence, August
+    16, 2026)."""
     try:
         cursor.execute(
             "UPDATE organizations SET last_scrape_status = %s, "
@@ -188,7 +193,10 @@ def record_scrape_status(cursor, conn, org_name, status, error_message=None):
         )
         conn.commit()
     except Exception:
-        conn.rollback()
+        try:
+            conn.rollback()
+        except Exception:
+            pass
 
 
 def get_db_connection():
