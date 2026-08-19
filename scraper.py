@@ -419,7 +419,13 @@ def fetch_facebook_posts(facebook_url, limit=20):
         json={"startUrls": [{"url": facebook_url}], "resultsLimit": limit},
         headers=headers
     )
+    if run_response.status_code not in (200, 201):
+        print(f"  Apify run failed to start: HTTP {run_response.status_code} - {run_response.text[:300]}")
+        return []
     run_id = run_response.json().get("data", {}).get("id")
+    if not run_id:
+        print(f"  Apify run failed to start: no run id in response - {run_response.text[:300]}")
+        return []
     print(f"  Apify run started: {run_id}")
     for i in range(30):
         time.sleep(10)
