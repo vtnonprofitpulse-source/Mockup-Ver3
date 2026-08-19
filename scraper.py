@@ -12,6 +12,14 @@ from dateutil import parser as dateutil_parser
 from datetime import datetime
 from urllib.parse import urljoin, urlparse
 
+# Bump this whenever a meaningful logic/prompt change ships. Folded into
+# every content hash below, so a version bump forces every page to be
+# reprocessed on the next run automatically - no manual wipe needed.
+# Root cause this fixes: source_hash previously only reflected page
+# content, not code version, so bug fixes silently never reached pages
+# whose source content hadn't changed (August 16, 2026).
+SCRAPER_VERSION = "2"
+
 NON_SPECIFIC_DATE_WORDS = {"ongoing", "tbd", "n/a", "none", "unknown", ""}
 
 
@@ -530,6 +538,23 @@ def find_existing_series_row(cursor, series_key):
     return row[0] if row else None
 
 
+def find_existing_by_event_key(cursor, event_key):
+    """Find an existing active row with this exact event_key, if any - lets
+    reprocessing (e.g. after a SCRAPER_VERSION bump) correctly update a
+    stale record in place, rather than the update silently failing because
+    the fresh INSERT collides with the old row's event_key and gets
+    skipped. Closes a gap the series_key mechanism didn't cover: it only
+    helped dated items, this covers undated ones too (August 16, 2026)."""
+    if not event_key:
+        return None
+    cursor.execute(
+        "SELECT id FROM content WHERE event_key = %s AND status = 'active' LIMIT 1",
+        (event_key,)
+    )
+    row = cursor.fetchone()
+    return row[0] if row else None
+
+
 def make_event_key(title, event_date, org_name):
     """Build a fingerprint so the same real-world item - dated or
     undated/recurring - is recognized as one item, not several, no matter
@@ -679,6 +704,25 @@ def save_to_database(records, org_name, town, county, mission_area,
                     print(f"  Skipped (update): {e}")
                     continue
 
+        existing_by_event_key = find_existing_by_event_key(cursor, event_key)
+        if existing_by_event_key:
+            try:
+                cursor.execute(
+                    "UPDATE content SET event_date = %s, description = %s, "
+                    "title = %s, content_type = %s, source_url = %s, "
+                    "source_hash = %s, series_key = %s WHERE id = %s",
+                    (event_date, record.get("description"), record.get("title"),
+                     record.get("content_type"), source_url, source_hash,
+                     series_key, existing_by_event_key)
+                )
+                conn.commit()
+                updated += 1
+                continue
+            except Exception as e:
+                conn.rollback()
+                print(f"  Skipped (update): {e}")
+                continue
+
         try:
             cursor.execute(
                 "INSERT INTO content (organization_name, content_type, title, "
@@ -810,7 +854,7 @@ for org in website_nonprofits:
             record_scrape_status(cursor, conn, org["name"], "no_content", error_msg)
             continue
 
-        source_hash = make_hash(org["name"] + raw_text)
+        source_hash = make_hash(org["name"] + raw_text + SCRAPER_VERSION)
 
         if hash_exists(cursor, source_hash):
             print("  No changes since last scrape - skipping Claude")
@@ -849,7 +893,7 @@ for org in facebook_nonprofits:
         new_posts = []
         for post in posts:
             post_url = post.get("url", "")
-            post_hash = make_hash(post_url)
+            post_hash = make_hash(post_url + SCRAPER_VERSION)
             if not hash_exists(cursor, post_hash):
                 new_posts.append((post, post_hash))
 
