@@ -606,14 +606,21 @@ def make_series_key(title, org_name):
 
 
 def find_existing_series_row(cursor, series_key):
-    """Find an existing active, dated row for this recurring series, if any."""
+    """Find an existing active row for this recurring series, if any -
+    dated or undated, doesn't matter, since series_key is title+org only.
+    Previously restricted to dated existing rows and only checked when the
+    new record itself had a date - that restriction was the actual dated-
+    vs-Ongoing dedup gap (VMBA's Trail Work Night showing as two rows,
+    found August 2026): a dated and an undated record of the exact same
+    real thing were structurally never compared. Removing the restriction
+    closes it using the same exact-title mechanism already trusted all
+    session, not a new fuzzy judgment call."""
     cursor.execute(
-        "SELECT id FROM content WHERE series_key = %s AND status = 'active' "
-        "AND event_date IS NOT NULL LIMIT 1",
+        "SELECT id, event_date FROM content WHERE series_key = %s "
+        "AND status = 'active' LIMIT 1",
         (series_key,)
     )
-    row = cursor.fetchone()
-    return row[0] if row else None
+    return cursor.fetchone()
 
 
 def find_existing_by_event_key(cursor, event_key):
@@ -842,24 +849,31 @@ def save_to_database(records, org_name, town, county, mission_area,
             print(f"  Skipped (duplicate wording): '{record.get('title')}'")
             continue
 
-        if event_date:
-            existing_id = find_existing_series_row(cursor, series_key)
-            if existing_id:
-                try:
-                    cursor.execute(
-                        "UPDATE content SET event_date = %s, description = %s, "
-                        "title = %s, source_url = %s, source_hash = %s, "
-                        "event_key = %s WHERE id = %s",
-                        (event_date, record.get("description"), record.get("title"),
-                         record_source_url, source_hash, event_key, existing_id)
-                    )
-                    conn.commit()
-                    updated += 1
-                    continue
-                except Exception as e:
-                    conn.rollback()
-                    print(f"  Skipped (update): {e}")
-                    continue
+        existing_series_match = find_existing_series_row(cursor, series_key)
+        if existing_series_match:
+            existing_id, existing_date = existing_series_match
+            # Prefer a real date over "Ongoing" - if this record has one and
+            # the existing row doesn't, that's an upgrade, not a downgrade.
+            # If the existing row already has a date and this new record
+            # doesn't, keep the existing date rather than erasing it.
+            final_date = event_date if event_date else existing_date
+            try:
+                cursor.execute(
+                    "UPDATE content SET event_date = %s, description = %s, "
+                    "title = %s, source_url = %s, source_hash = %s, "
+                    "event_key = %s WHERE id = %s",
+                    (final_date, record.get("description"), record.get("title"),
+                     record_source_url, source_hash,
+                     make_event_key(record.get("title", ""), final_date, org_name),
+                     existing_id)
+                )
+                conn.commit()
+                updated += 1
+                continue
+            except Exception as e:
+                conn.rollback()
+                print(f"  Skipped (update): {e}")
+                continue
 
         existing_by_event_key = find_existing_by_event_key(cursor, event_key)
         if existing_by_event_key:
