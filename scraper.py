@@ -569,6 +569,71 @@ def find_existing_by_event_key(cursor, event_key):
     return row[0] if row else None
 
 
+DEDUP_STOPWORDS = {
+    'a', 'an', 'the', 'and', 'or', 'of', 'to', 'in', 'on', 'at', 'for', 'with',
+    'is', 'are', 'this', 'that', 'it', 'its', 'their', 'our', 'we', 'will',
+    'be', 'as', 'by', 'from', 'all', 'can', 'has', 'have', 'was', 'were',
+    'which', 'who', 'into'
+}
+
+
+def significant_words(text):
+    """Lowercase words with common filler stripped, for description
+    similarity comparison. Not used for anything else - specifically for
+    detecting the same real event described in different wording."""
+    words = re.findall(r"[a-z0-9]+", (text or "").lower())
+    return set(w for w in words if w not in DEDUP_STOPWORDS and len(w) > 2)
+
+
+def description_similarity(desc_a, desc_b):
+    """How much of the smaller description's significant words are also
+    present in the other - a simple, fully deterministic word-overlap
+    metric, no AI judgment involved. Validated against real duplicate
+    pairs found August 16, 2026 (scored 0.77-0.88) and stress-tested
+    against the hardest real false-positive risk, Kelly Brush's
+    'Adaptive Rec Talks' series - genuinely different events with
+    near-identical template wording (scored 0.62-0.68). This alone
+    cannot safely distinguish those - see find_duplicate_by_description,
+    which requires this AND a matching date/undated-status together."""
+    a = significant_words(desc_a)
+    b = significant_words(desc_b)
+    if not a or not b:
+        return 0.0
+    overlap = len(a & b)
+    return overlap / min(len(a), len(b))
+
+
+DEDUP_SIMILARITY_THRESHOLD = 0.65
+
+
+def find_duplicate_by_description(cursor, org_name, event_date, description):
+    """Find an existing active row at the same organization, with the same
+    date (or both undated), whose description is similar enough to be the
+    same real-world event described in different wording - e.g. 'Fall
+    Fundo' vs 'The 2026 Fall Fundo'. Requires BOTH same date/status AND
+    similar description together, never either alone - same date rules
+    out the Adaptive Rec Talks false-positive risk that description
+    similarity alone cannot safely avoid (August 16, 2026 finding).
+    Known gap: does not catch the same event appearing both dated and as
+    'Ongoing' from different sources - a separate, harder sub-problem."""
+    if event_date:
+        cursor.execute(
+            "SELECT id, description FROM content WHERE organization_name = %s "
+            "AND status = 'active' AND event_date = %s",
+            (org_name, event_date)
+        )
+    else:
+        cursor.execute(
+            "SELECT id, description FROM content WHERE organization_name = %s "
+            "AND status = 'active' AND event_date IS NULL",
+            (org_name,)
+        )
+    for row_id, existing_desc in cursor.fetchall():
+        if description_similarity(description, existing_desc) >= DEDUP_SIMILARITY_THRESHOLD:
+            return row_id
+    return None
+
+
 def make_event_key(title, event_date, org_name):
     """Build a fingerprint so the same real-world item - dated or
     undated/recurring - is recognized as one item, not several, no matter
@@ -698,6 +763,13 @@ def save_to_database(records, org_name, town, county, mission_area,
         series_key = make_series_key(record.get("title", ""), org_name)
         event_key = make_event_key(record.get("title", ""), event_date, org_name)
         recurrence_pattern = validate_recurrence_pattern(record.get("recurrence_raw", ""))
+
+        duplicate_id = find_duplicate_by_description(
+            cursor, org_name, event_date, record.get("description", "")
+        )
+        if duplicate_id:
+            print(f"  Skipped (duplicate wording): '{record.get('title')}'")
+            continue
 
         if event_date:
             existing_id = find_existing_series_row(cursor, series_key)
