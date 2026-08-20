@@ -8,6 +8,8 @@ import io
 import hashlib
 import pdfplumber
 import re
+import json
+import html
 from dateutil import parser as dateutil_parser
 from datetime import datetime
 from urllib.parse import urljoin, urlparse
@@ -359,11 +361,71 @@ def discover_all_relevant_links(org_urls, max_total_extra=MAX_TOTAL_EXTRA_LINKS)
     return (level1_links + level2_links)[:max_total_extra]
 
 
+def extract_jsonld_events(soup, source_url):
+    """Extract event records directly from the page's own structured data
+    (schema.org Event via JSON-LD), if present - a real, deterministic
+    alternative to asking Claude to disambiguate dates from flattened text.
+    Confirmed real fix for the VMBA date-misattribution bug (STP - 2026
+    Velo Stowe getting Trail Work Night's date): both events are separate,
+    self-contained JSON objects in the source data, making cross-
+    contamination between neighboring events structurally impossible here,
+    unlike parsing flattened HTML text ever could guarantee.
+    Generic - checks for the data's presence on any page, not tied to
+    WordPress, Yoast, or any specific plugin/platform (August 2026)."""
+    records = []
+    for script in soup.find_all("script", type="application/ld+json"):
+        if not script.string:
+            continue
+        try:
+            data = json.loads(script.string)
+        except (TypeError, ValueError):
+            continue
+
+        if isinstance(data, dict) and "@graph" in data:
+            candidates = data["@graph"]
+        elif isinstance(data, list):
+            candidates = data
+        else:
+            candidates = [data]
+
+        for item in candidates:
+            if not isinstance(item, dict) or item.get("@type") != "Event":
+                continue
+            name = html.unescape(item.get("name", "")).strip()
+            start_date_raw = item.get("startDate")
+            if not name or not start_date_raw:
+                continue
+            try:
+                parsed_date = dateutil_parser.parse(start_date_raw).date()
+            except (ValueError, TypeError):
+                continue
+
+            description = html.unescape(item.get("description", "") or "")
+            # Strip the "Read more..." link artifact WordPress often embeds
+            # at the end of JSON-LD descriptions.
+            description = re.sub(r'<a class="moretag".*', '', description).strip()
+            if not description:
+                description = f"{name} - see event page for details."
+
+            records.append({
+                "title": name,
+                "content_type": "Event",
+                "description": description[:500],
+                "event_date_override": parsed_date,
+                "source_url_override": item.get("url", source_url),
+            })
+    return records
+
+
 def scrape_website(url):
     try:
         headers = {"User-Agent": "VermontNonprofitPulse/1.0"}
         response = requests.get(url, timeout=10, headers=headers)
         soup = BeautifulSoup(response.text, "html.parser")
+        # Capture structured event data BEFORE stripping script tags below -
+        # this is where it lives, and it was previously being destroyed
+        # before we ever got a chance to look at it (August 2026).
+        jsonld_events = extract_jsonld_events(soup, url)
         # Strip navigation/header/footer boilerplate - many real sites (e.g.
         # WordPress themes) put large menus in <header> without a <nav> tag,
         # which previously ate into the truncation budget before any real
@@ -390,21 +452,23 @@ def scrape_website(url):
         combined = text[:6000]
         if pdf_text:
             combined += "\nPDF CONTENT: " + pdf_text[:3000]
-        return combined
+        return combined, jsonld_events
     except Exception as e:
-        return f"Error: {e}"
+        return f"Error: {e}", []
 
 
 def scrape_multiple_pages(urls):
     combined = []
     errors = []
+    all_jsonld_events = []
     for url in urls:
-        text = scrape_website(url)
+        text, jsonld_events = scrape_website(url)
         if text.startswith("Error"):
             errors.append(f"{url}: {text}")
         else:
             combined.append(text)
-    return "\n".join(combined)[:15000], errors
+            all_jsonld_events.extend(jsonld_events)
+    return "\n".join(combined)[:15000], errors, all_jsonld_events
 
 
 def fetch_facebook_posts(facebook_url, limit=20):
@@ -756,7 +820,14 @@ def save_to_database(records, org_name, town, county, mission_area,
     updated = 0
     blocked = 0
     for record in records:
-        event_date = parse_event_date(record.get("date_text", ""))
+        if "event_date_override" in record:
+            # Real, structured data (e.g. JSON-LD) - never re-derive this
+            # from text, and never subject it to the AI-hallucination
+            # future-date cap, since it isn't a guess to begin with.
+            event_date = record["event_date_override"]
+        else:
+            event_date = parse_event_date(record.get("date_text", ""))
+        record_source_url = record.get("source_url_override", source_url)
         if not is_valid_record(record, town, event_date):
             blocked += 1
             continue
@@ -780,7 +851,7 @@ def save_to_database(records, org_name, town, county, mission_area,
                         "title = %s, source_url = %s, source_hash = %s, "
                         "event_key = %s WHERE id = %s",
                         (event_date, record.get("description"), record.get("title"),
-                         source_url, source_hash, event_key, existing_id)
+                         record_source_url, source_hash, event_key, existing_id)
                     )
                     conn.commit()
                     updated += 1
@@ -798,7 +869,7 @@ def save_to_database(records, org_name, town, county, mission_area,
                     "title = %s, content_type = %s, source_url = %s, "
                     "source_hash = %s, series_key = %s WHERE id = %s",
                     (event_date, record.get("description"), record.get("title"),
-                     record.get("content_type"), source_url, source_hash,
+                     record.get("content_type"), record_source_url, source_hash,
                      series_key, existing_by_event_key)
                 )
                 conn.commit()
@@ -817,7 +888,7 @@ def save_to_database(records, org_name, town, county, mission_area,
                 "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                 (org_name, record.get("content_type"), record.get("title"),
                  record.get("description"), event_date, event_key, series_key,
-                 recurrence_pattern, town, county, mission_area, source_url,
+                 recurrence_pattern, town, county, mission_area, record_source_url,
                  source_hash, "active")
             )
             conn.commit()
@@ -933,8 +1004,8 @@ for org in website_nonprofits:
             print(f"  Discovered {len(discovered_links)} relevant page(s): {discovered_links}")
         all_urls = org["urls"] + discovered_links
 
-        raw_text, scrape_errors = scrape_multiple_pages(all_urls)
-        if not raw_text:
+        raw_text, scrape_errors, jsonld_events = scrape_multiple_pages(all_urls)
+        if not raw_text and not jsonld_events:
             error_msg = "; ".join(scrape_errors) if scrape_errors else "No content found on any page"
             print(f"  No content found: {error_msg}")
             record_scrape_status(cursor, conn, org["name"], "no_content", error_msg)
@@ -945,6 +1016,19 @@ for org in website_nonprofits:
         if hash_exists(cursor, source_hash):
             print("  No changes since last scrape - skipping Claude")
             record_scrape_status(cursor, conn, org["name"], "unchanged")
+            continue
+
+        if jsonld_events:
+            jsonld_saved = save_to_database(
+                jsonld_events, org["name"], org["town"], org["county"],
+                org["mission"], org["source_url"], source_hash, cursor, conn
+            )
+            if jsonld_saved:
+                print(f"  Saved {jsonld_saved} from structured event data")
+            total_saved += jsonld_saved
+
+        if not raw_text:
+            record_scrape_status(cursor, conn, org["name"], "ok")
             continue
 
         tagged = tag_content(raw_text, org["name"], org["town"])
