@@ -361,6 +361,103 @@ def discover_all_relevant_links(org_urls, max_total_extra=MAX_TOTAL_EXTRA_LINKS)
     return (level1_links + level2_links)[:max_total_extra]
 
 
+def unfold_ical_lines(text):
+    """RFC 5545 line folding: continuation lines start with a space or tab
+    and should be joined back to the previous line before parsing."""
+    lines = text.replace("\r\n", "\n").split("\n")
+    unfolded = []
+    for line in lines:
+        if line.startswith(" ") or line.startswith("\t"):
+            if unfolded:
+                unfolded[-1] += line[1:]
+        else:
+            unfolded.append(line)
+    return unfolded
+
+
+def unescape_ical_text(text):
+    return (text.replace("\\n", " ").replace("\\N", " ")
+                .replace("\\,", ",").replace("\\;", ";").replace("\\\\", "\\"))
+
+
+def parse_ical_date(value):
+    """Extract the date portion regardless of time/timezone/Z-suffix
+    variants - deliberately simple rather than fuzzy-parsing a format with
+    several real-world variations, since VNP only stores a date, not an
+    exact time, so this sidesteps timezone-conversion edge cases entirely."""
+    digits = re.sub(r'[^0-9]', '', value)
+    if len(digits) < 8:
+        return None
+    try:
+        return datetime(int(digits[0:4]), int(digits[4:6]), int(digits[6:8])).date()
+    except ValueError:
+        return None
+
+
+def extract_ical_events(ics_text, source_url):
+    """Extract event records directly from a real iCal/.ics calendar feed -
+    the most authoritative structured source available when an org
+    provides one (confirmed real example: VMBA's calendar export). Pure
+    deterministic parsing, no AI judgment, no new dependency - tested
+    against realistic real-format data including line-folded descriptions
+    and both timed and all-day event variants (August 2026)."""
+    records = []
+    lines = unfold_ical_lines(ics_text)
+    current = None
+    for line in lines:
+        if line.startswith("BEGIN:VEVENT"):
+            current = {}
+        elif line.startswith("END:VEVENT"):
+            if current and current.get("title") and current.get("date"):
+                records.append({
+                    "title": current["title"],
+                    "content_type": "Event",
+                    "description": current.get("description") or f"{current['title']} - see event page for details.",
+                    "event_date_override": current["date"],
+                    "source_url_override": current.get("url", source_url),
+                })
+            current = None
+        elif current is not None:
+            if line.startswith("SUMMARY"):
+                _, _, value = line.partition(":")
+                current["title"] = unescape_ical_text(value.strip())
+            elif line.startswith("DESCRIPTION"):
+                _, _, value = line.partition(":")
+                current["description"] = unescape_ical_text(value.strip())[:500]
+            elif line.startswith("DTSTART"):
+                _, _, value = line.partition(":")
+                current["date"] = parse_ical_date(value.strip())
+            elif line.startswith("URL"):
+                _, _, value = line.partition(":")
+                current["url"] = value.strip()
+    return records
+
+
+def discover_ical_feed(candidate_urls):
+    """Probe a small set of candidate URLs for a working iCal feed by
+    directly checking whether appending '?ical=1' returns real VCALENDAR
+    data - not by guessing from platform/CMS, which can't reliably predict
+    whether a working feed actually exists (confirmed real example:
+    VMBA's ?ical=1 feed, found August 16, 2026). Self-verifying: either
+    the response is valid or it isn't, no inference involved. Returns the
+    feed text if found, else None."""
+    headers = {"User-Agent": "VermontNonprofitPulse/1.0"}
+    tried = set()
+    for url in candidate_urls:
+        base = url.split("?")[0].rstrip("/")
+        probe_url = base + "/?ical=1"
+        if probe_url in tried:
+            continue
+        tried.add(probe_url)
+        try:
+            response = requests.get(probe_url, timeout=10, headers=headers)
+            if response.status_code == 200 and response.text.strip().startswith("BEGIN:VCALENDAR"):
+                return response.text
+        except requests.RequestException:
+            continue
+    return None
+
+
 def extract_jsonld_events(soup, source_url):
     """Extract event records directly from the page's own structured data
     (schema.org Event via JSON-LD), if present - a real, deterministic
@@ -1026,6 +1123,17 @@ for org in website_nonprofits:
             continue
 
         source_hash = make_hash(org["name"] + raw_text + SCRAPER_VERSION)
+
+        ical_feed = discover_ical_feed(all_urls)
+        if ical_feed:
+            ical_events = extract_ical_events(ical_feed, org["source_url"])
+            if ical_events:
+                ical_saved = save_to_database(
+                    ical_events, org["name"], org["town"], org["county"],
+                    org["mission"], org["source_url"], source_hash, cursor, conn
+                )
+                if ical_saved:
+                    print(f"  Saved {ical_saved} from iCal feed ({len(ical_events)} events found)")
 
         if hash_exists(cursor, source_hash):
             print("  No changes since last scrape - skipping Claude")
