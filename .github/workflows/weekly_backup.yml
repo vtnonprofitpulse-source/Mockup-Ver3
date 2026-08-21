@@ -28,7 +28,7 @@ jobs:
         run: |
           mkdir -p backups
           DATE=$(date +%Y-%m-%d)
-          pg_dump "$DATABASE_URL" --no-owner --no-privileges > "backups/vnp_backup_${DATE}.sql"
+          /usr/lib/postgresql/18/bin/pg_dump "$DATABASE_URL" --no-owner --no-privileges > "backups/vnp_backup_${DATE}.sql"
           echo "Backup created: backups/vnp_backup_${DATE}.sql ($(du -h backups/vnp_backup_${DATE}.sql | cut -f1))"
 
       - name: Commit and push backup
