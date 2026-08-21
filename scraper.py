@@ -775,30 +775,56 @@ DEDUP_SIMILARITY_THRESHOLD = 0.65
 
 
 def find_duplicate_by_description(cursor, org_name, event_date, description):
-    """Find an existing active row at the same organization, with the same
-    date (or both undated), whose description is similar enough to be the
-    same real-world event described in different wording - e.g. 'Fall
-    Fundo' vs 'The 2026 Fall Fundo'. Requires BOTH same date/status AND
-    similar description together, never either alone - same date rules
-    out the Adaptive Rec Talks false-positive risk that description
-    similarity alone cannot safely avoid (August 16, 2026 finding).
-    Known gap: does not catch the same event appearing both dated and as
-    'Ongoing' from different sources - a separate, harder sub-problem."""
+    """Find an existing active row at the same organization whose
+    description is similar enough to be the same real-world event
+    described in different wording - e.g. 'Fall Fundo' vs 'The 2026 Fall
+    Fundo'. Checks two categories of candidate, both required to have a
+    similar description, never on wording alone:
+    1. Same date (or both undated) - the original check.
+    2. One dated, the other undated - closes the 'dated instance vs
+       generic recurring description' gap (Betty's Bikes' Potluck Dinner
+       pattern, found August 2026). Deliberately NOT extended to two
+       different specific dates - confirmed via the Adaptive Rec Talks
+       case that description similarity alone cannot safely distinguish
+       different real dated occurrences from each other; the exact-date
+       requirement stays essential for that comparison, this only relaxes
+       it for the narrower, safer dated-vs-undated shape.
+    Returns (row_id, existing_event_date) so the caller can merge
+    intelligently - preferring to keep/upgrade to a real date rather than
+    silently discarding one - or None if no match."""
     if event_date:
         cursor.execute(
-            "SELECT id, description FROM content WHERE organization_name = %s "
+            "SELECT id, description, event_date FROM content WHERE organization_name = %s "
             "AND status = 'active' AND event_date = %s",
             (org_name, event_date)
         )
     else:
         cursor.execute(
-            "SELECT id, description FROM content WHERE organization_name = %s "
+            "SELECT id, description, event_date FROM content WHERE organization_name = %s "
             "AND status = 'active' AND event_date IS NULL",
             (org_name,)
         )
-    for row_id, existing_desc in cursor.fetchall():
+    for row_id, existing_desc, existing_date in cursor.fetchall():
         if description_similarity(description, existing_desc) >= DEDUP_SIMILARITY_THRESHOLD:
-            return row_id
+            return row_id, existing_date
+
+    # Dated-vs-undated cross-check - never dated-vs-a-different-date.
+    if event_date:
+        cursor.execute(
+            "SELECT id, description, event_date FROM content WHERE organization_name = %s "
+            "AND status = 'active' AND event_date IS NULL",
+            (org_name,)
+        )
+    else:
+        cursor.execute(
+            "SELECT id, description, event_date FROM content WHERE organization_name = %s "
+            "AND status = 'active' AND event_date IS NOT NULL",
+            (org_name,)
+        )
+    for row_id, existing_desc, existing_date in cursor.fetchall():
+        if description_similarity(description, existing_desc) >= DEDUP_SIMILARITY_THRESHOLD:
+            return row_id, existing_date
+
     return None
 
 
@@ -939,12 +965,29 @@ def save_to_database(records, org_name, town, county, mission_area,
         event_key = make_event_key(record.get("title", ""), event_date, org_name)
         recurrence_pattern = validate_recurrence_pattern(record.get("recurrence_raw", ""))
 
-        duplicate_id = find_duplicate_by_description(
+        duplicate_match = find_duplicate_by_description(
             cursor, org_name, event_date, record.get("description", "")
         )
-        if duplicate_id:
-            print(f"  Skipped (duplicate wording): '{record.get('title')}'")
-            continue
+        if duplicate_match:
+            dup_id, dup_existing_date = duplicate_match
+            final_date = event_date if event_date else dup_existing_date
+            try:
+                cursor.execute(
+                    "UPDATE content SET event_date = %s, description = %s, "
+                    "title = %s, source_url = %s, source_hash = %s, "
+                    "event_key = %s WHERE id = %s",
+                    (final_date, record.get("description"), record.get("title"),
+                     record_source_url, source_hash,
+                     make_event_key(record.get("title", ""), final_date, org_name),
+                     dup_id)
+                )
+                conn.commit()
+                updated += 1
+                continue
+            except Exception as e:
+                conn.rollback()
+                print(f"  Skipped (update): {e}")
+                continue
 
         existing_series_match = find_existing_series_row(cursor, series_key)
         if existing_series_match:
