@@ -1,0 +1,38 @@
+name: Weekly Database Backup
+
+on:
+  schedule:
+    # Every Sunday at 10:00 UTC (~6am Eastern)
+    - cron: '0 10 * * 0'
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client=14.*
+
+      - name: Create backup
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          mkdir -p backups
+          DATE=$(date +%Y-%m-%d)
+          pg_dump "$DATABASE_URL" --no-owner --no-privileges > "backups/vnp_backup_${DATE}.sql"
+          echo "Backup created: backups/vnp_backup_${DATE}.sql ($(du -h backups/vnp_backup_${DATE}.sql | cut -f1))"
+
+      - name: Commit and push backup
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add backups/
+          git diff --staged --quiet && echo "No changes to commit" || git commit -m "Weekly database backup - $(date +%Y-%m-%d)"
+          git push
