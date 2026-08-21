@@ -674,7 +674,6 @@ def tag_content(raw_text, org_name, org_town):
     message = client.messages.create(
         model="claude-sonnet-4-6",
         max_tokens=3000,
-        temperature=0,
         messages=[{"role": "user", "content": prompt}]
     )
     return message.content[0].text
