@@ -580,6 +580,7 @@ def fetch_facebook_posts(facebook_url, limit=20):
     }
     run_response = requests.post(
         f"https://api.apify.com/v2/acts/{ACTOR_ID}/runs",
+        params={"build": "0.99.1329"},
         json={"startUrls": [{"url": facebook_url}], "resultsLimit": limit},
         headers=headers
     )
