@@ -3,6 +3,7 @@ import anthropic
 import requests
 from bs4 import BeautifulSoup
 import os
+import sys
 import time
 import io
 import hashlib
@@ -93,6 +94,8 @@ db_url = os.environ.get("DATABASE_URL", "NOT SET")
 print(f"DATABASE_URL starts with: {db_url[:30]}")
 apify_key = os.environ.get("APIFY_API_KEY", "NOT SET")
 print(f"APIFY_API_KEY starts with: {apify_key[:10]}")
+print(f"anthropic library version: {anthropic.__version__}")
+print(f"requests library version: {requests.__version__}")
 
 VERMONT_PLACES = {
     "addison", "albany", "alburgh", "andover", "arlington", "athens",
@@ -1145,12 +1148,15 @@ facebook_nonprofits = [
 ]
 
 total_saved = 0
+error_count = 0
+total_orgs_attempted = 0
 conn = get_db_connection()
 cursor = conn.cursor()
 
 print("=== WEBSITE SCRAPING ===")
 for org in website_nonprofits:
     print(f"Processing {org['name']}...")
+    total_orgs_attempted += 1
     try:
         discovered_links = discover_all_relevant_links(org["urls"])
         if discovered_links:
@@ -1211,11 +1217,13 @@ for org in website_nonprofits:
         record_scrape_status(cursor, conn, org["name"], "ok")
     except Exception as e:
         print(f"  Error: {e}")
+        error_count += 1
         record_scrape_status(cursor, conn, org["name"], "error", str(e))
 
 print("\n=== FACEBOOK SCRAPING ===")
 for org in facebook_nonprofits:
     print(f"Processing {org['name']} via Facebook...")
+    total_orgs_attempted += 1
     try:
         posts = fetch_facebook_posts(org["facebook_url"], limit=20)
         print(f"  Found {len(posts)} posts")
@@ -1258,8 +1266,27 @@ for org in facebook_nonprofits:
         )
     except Exception as e:
         print(f"  Error: {e}")
+        error_count += 1
         record_scrape_status(cursor, conn, org["name"], "error", str(e))
 
 cursor.close()
 conn.close()
 print(f"\n=== COMPLETE: {total_saved} total new records saved ===")
+
+# Widespread-failure detection: one organization erroring is normal and
+# shouldn't block the rest of the run - but if MOST organizations fail the
+# same way (as happened August 21, 2026, when a deprecated API parameter
+# silently broke almost everything), that's a serious problem that should
+# be loud and visible, not hidden behind a green checkmark. Exiting
+# non-zero here causes GitHub Actions to mark the run as failed, which
+# triggers its default failure notification - turning a silent, easily-
+# missed failure into something that actually gets noticed.
+if total_orgs_attempted > 0:
+    failure_rate = error_count / total_orgs_attempted
+    if failure_rate > 0.4:
+        print(
+            f"\n!!! WIDESPREAD FAILURE: {error_count} of {total_orgs_attempted} "
+            f"organizations errored ({failure_rate:.0%}) - failing this run "
+            f"loudly rather than reporting false success !!!"
+        )
+        sys.exit(1)
