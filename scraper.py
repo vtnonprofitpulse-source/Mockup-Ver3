@@ -557,6 +557,47 @@ def scrape_website(url):
         return f"Error: {e}", []
 
 
+def process_single_page(url, org, cursor, conn):
+    """Process exactly one discovered page for an organization - scrape,
+    check for changes, extract via JSON-LD and Claude, and save. Each
+    record is saved with THIS page's own URL as its source, not the org's
+    generic homepage - fixes the source-link attribution bug (confirmed
+    affecting every organization using standard AI extraction, found
+    August 22, 2026, right before the FPF meeting). Returns
+    (saved_count, jsonld_saved_count, had_content)."""
+    text, jsonld_events = scrape_website(url)
+    if text.startswith("Error"):
+        return 0, 0, False
+
+    page_hash = make_hash(org["name"] + url + text + SCRAPER_VERSION)
+
+    jsonld_saved = 0
+    if jsonld_events:
+        jsonld_saved = save_to_database(
+            jsonld_events, org["name"], org["town"], org["county"],
+            org["mission"], url, page_hash, cursor, conn
+        )
+        if jsonld_saved:
+            print(f"  Saved {jsonld_saved} from structured event data ({url})")
+
+    if hash_exists(cursor, page_hash):
+        return 0, jsonld_saved, True
+
+    if not text:
+        return 0, jsonld_saved, True
+
+    tagged = tag_content(text, org["name"], org["town"])
+    if "NO ITEMS FOUND" in tagged:
+        return 0, jsonld_saved, True
+
+    records = parse_results(tagged)
+    saved = save_to_database(
+        records, org["name"], org["town"], org["county"],
+        org["mission"], url, page_hash, cursor, conn
+    )
+    return saved, jsonld_saved, True
+
+
 def scrape_multiple_pages(urls):
     combined = []
     errors = []
@@ -1164,57 +1205,35 @@ for org in website_nonprofits:
             print(f"  Discovered {len(discovered_links)} relevant page(s): {discovered_links}")
         all_urls = org["urls"] + discovered_links
 
-        raw_text, scrape_errors, jsonld_events = scrape_multiple_pages(all_urls)
-        if not raw_text and not jsonld_events:
-            error_msg = "; ".join(scrape_errors) if scrape_errors else "No content found on any page"
-            print(f"  No content found: {error_msg}")
-            record_scrape_status(cursor, conn, org["name"], "no_content", error_msg)
-            continue
-
-        source_hash = make_hash(org["name"] + raw_text + SCRAPER_VERSION)
-
         ical_feed = discover_ical_feed(all_urls)
         if ical_feed:
             ical_events = extract_ical_events(ical_feed, org["source_url"])
             if ical_events:
+                ical_hash = make_hash(org["name"] + "ical" + SCRAPER_VERSION)
                 ical_saved = save_to_database(
                     ical_events, org["name"], org["town"], org["county"],
-                    org["mission"], org["source_url"], source_hash, cursor, conn
+                    org["mission"], org["source_url"], ical_hash, cursor, conn
                 )
                 if ical_saved:
                     print(f"  Saved {ical_saved} from iCal feed ({len(ical_events)} events found)")
+                total_saved += ical_saved
 
-        if hash_exists(cursor, source_hash):
-            print("  No changes since last scrape - skipping Claude")
-            record_scrape_status(cursor, conn, org["name"], "unchanged")
+        org_saved = 0
+        any_content_found = False
+        for url in all_urls:
+            saved, jsonld_saved, had_content = process_single_page(url, org, cursor, conn)
+            org_saved += saved + jsonld_saved
+            if had_content:
+                any_content_found = True
+
+        total_saved += org_saved
+
+        if not any_content_found:
+            print("  No content found on any page")
+            record_scrape_status(cursor, conn, org["name"], "no_content", "No content found on any page")
             continue
 
-        if jsonld_events:
-            jsonld_saved = save_to_database(
-                jsonld_events, org["name"], org["town"], org["county"],
-                org["mission"], org["source_url"], source_hash, cursor, conn
-            )
-            if jsonld_saved:
-                print(f"  Saved {jsonld_saved} from structured event data")
-            total_saved += jsonld_saved
-
-        if not raw_text:
-            record_scrape_status(cursor, conn, org["name"], "ok")
-            continue
-
-        tagged = tag_content(raw_text, org["name"], org["town"])
-        if "NO ITEMS FOUND" in tagged:
-            print("  No items found")
-            record_scrape_status(cursor, conn, org["name"], "no_items")
-            continue
-
-        records = parse_results(tagged)
-        saved = save_to_database(
-            records, org["name"], org["town"], org["county"],
-            org["mission"], org["source_url"], source_hash, cursor, conn
-        )
-        total_saved += saved
-        print(f"  Saved {saved} new records")
+        print(f"  Saved {org_saved} new records")
         record_scrape_status(cursor, conn, org["name"], "ok")
     except Exception as e:
         print(f"  Error: {e}")
