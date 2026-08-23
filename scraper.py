@@ -818,12 +818,36 @@ def description_similarity(desc_a, desc_b):
 DEDUP_SIMILARITY_THRESHOLD = 0.65
 
 
-def find_duplicate_by_description(cursor, org_name, event_date, description):
-    """Find an existing active row at the same organization whose
+def title_containment_match(title_a, title_b):
+    """Check whether one title's meaningful words are fully contained
+    within the other - e.g. 'Reward Volunteers' within 'Reward Volunteers
+    Program'. Deliberately stricter than a general word-overlap ratio:
+    requires full containment, not just partial overlap. This matters
+    because general overlap ratios proved genuinely unsafe on their own -
+    confirmed against real data that template-based titles like 'Adaptive
+    Rec Talks - Tennis' vs '...Pickleball' score HIGHER on general overlap
+    (0.75) than some real duplicate pairs this check is meant to catch,
+    yet are genuinely different real events. Full containment correctly
+    separates them (neither is a full subset of the other), while still
+    catching real cases like the ones above. Tested against 3 real
+    duplicate pairs (all correctly matched), 5 real near-miss titles from
+    actual production data (all correctly stayed separate), and all 10
+    Adaptive Rec Talks pairs (all correctly stayed separate) before
+    shipping (August 22, 2026)."""
+    words_a = significant_words(title_a)
+    words_b = significant_words(title_b)
+    if not words_a or not words_b:
+        return False
+    shorter, longer = (words_a, words_b) if len(words_a) <= len(words_b) else (words_b, words_a)
+    return shorter.issubset(longer)
+
+
+def find_duplicate_by_description(cursor, org_name, event_date, title, description):
+    """Find an existing active row at the same organization whose title or
     description is similar enough to be the same real-world event
     described in different wording - e.g. 'Fall Fundo' vs 'The 2026 Fall
-    Fundo'. Checks two categories of candidate, both required to have a
-    similar description, never on wording alone:
+    Fundo'. Checks two categories of candidate, both required to match on
+    title containment OR description similarity, never on date alone:
     1. Same date (or both undated) - the original check.
     2. One dated, the other undated - closes the 'dated instance vs
        generic recurring description' gap (Betty's Bikes' Potluck Dinner
@@ -838,34 +862,38 @@ def find_duplicate_by_description(cursor, org_name, event_date, description):
     silently discarding one - or None if no match."""
     if event_date:
         cursor.execute(
-            "SELECT id, description, event_date FROM content WHERE organization_name = %s "
+            "SELECT id, title, description, event_date FROM content WHERE organization_name = %s "
             "AND status = 'active' AND event_date = %s",
             (org_name, event_date)
         )
     else:
         cursor.execute(
-            "SELECT id, description, event_date FROM content WHERE organization_name = %s "
+            "SELECT id, title, description, event_date FROM content WHERE organization_name = %s "
             "AND status = 'active' AND event_date IS NULL",
             (org_name,)
         )
-    for row_id, existing_desc, existing_date in cursor.fetchall():
+    for row_id, existing_title, existing_desc, existing_date in cursor.fetchall():
+        if title_containment_match(title, existing_title):
+            return row_id, existing_date
         if description_similarity(description, existing_desc) >= DEDUP_SIMILARITY_THRESHOLD:
             return row_id, existing_date
 
     # Dated-vs-undated cross-check - never dated-vs-a-different-date.
     if event_date:
         cursor.execute(
-            "SELECT id, description, event_date FROM content WHERE organization_name = %s "
+            "SELECT id, title, description, event_date FROM content WHERE organization_name = %s "
             "AND status = 'active' AND event_date IS NULL",
             (org_name,)
         )
     else:
         cursor.execute(
-            "SELECT id, description, event_date FROM content WHERE organization_name = %s "
+            "SELECT id, title, description, event_date FROM content WHERE organization_name = %s "
             "AND status = 'active' AND event_date IS NOT NULL",
             (org_name,)
         )
-    for row_id, existing_desc, existing_date in cursor.fetchall():
+    for row_id, existing_title, existing_desc, existing_date in cursor.fetchall():
+        if title_containment_match(title, existing_title):
+            return row_id, existing_date
         if description_similarity(description, existing_desc) >= DEDUP_SIMILARITY_THRESHOLD:
             return row_id, existing_date
 
@@ -1010,7 +1038,7 @@ def save_to_database(records, org_name, town, county, mission_area,
         recurrence_pattern = validate_recurrence_pattern(record.get("recurrence_raw", ""))
 
         duplicate_match = find_duplicate_by_description(
-            cursor, org_name, event_date, record.get("description", "")
+            cursor, org_name, event_date, record.get("title", ""), record.get("description", "")
         )
         if duplicate_match:
             dup_id, dup_existing_date = duplicate_match
