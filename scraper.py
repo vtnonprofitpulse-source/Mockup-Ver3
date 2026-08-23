@@ -1198,6 +1198,118 @@ website_nonprofits = [
         "mission": "Bikes & Pedestrian",
         "source_url": "https://prideridesvt.com/"
     },
+    {
+        "name": "AALV (Association of Africans Living in Vermont)",
+        "urls": ["https://www.aalv-vt.org"],
+        "town": "Burlington", "county": "Chittenden",
+        "mission": "Justice & Legal",
+        "source_url": "https://www.aalv-vt.org"
+    },
+    {
+        "name": "ACLU of Vermont",
+        "urls": ["https://www.acluvt.org/"],
+        "town": "Montpelier", "county": "Washington",
+        "mission": "Justice & Legal",
+        "source_url": "https://www.acluvt.org/"
+    },
+    {
+        "name": "I Am A Vermonter",
+        "urls": ["https://www.iamavermonter.org/"],
+        "town": "Burlington", "county": "Chittenden",
+        "mission": "Justice & Legal",
+        "source_url": "https://www.iamavermonter.org/"
+    },
+    {
+        "name": "Migrant Justice",
+        "urls": ["https://migrantjustice.net/"],
+        "town": "Burlington", "county": "Chittenden",
+        "mission": "Justice & Legal",
+        "source_url": "https://migrantjustice.net/"
+    },
+    {
+        "name": "Peace and Justice Center",
+        "urls": ["https://www.pjcvt.org/"],
+        "town": "Burlington", "county": "Chittenden",
+        "mission": "Justice & Legal",
+        "source_url": "https://www.pjcvt.org/"
+    },
+    {
+        "name": "The Root Social Justice Center",
+        "urls": ["https://www.therootsjc.org/mission"],
+        "town": "Brattleboro", "county": "Windham",
+        "mission": "Justice & Legal",
+        "source_url": "https://www.therootsjc.org/mission"
+    },
+    {
+        "name": "Vermont Association for Justice",
+        "urls": ["https://www.vermontjustice.org/"],
+        "town": "Montpelier", "county": "Washington",
+        "mission": "Justice & Legal",
+        "source_url": "https://www.vermontjustice.org/"
+    },
+    {
+        "name": "Vermont Bar Association",
+        "urls": ["https://www.vtbar.org/pro-bono-legal-services/"],
+        "town": "Montpelier", "county": "Washington",
+        "mission": "Justice & Legal",
+        "source_url": "https://www.vtbar.org/pro-bono-legal-services/"
+    },
+    {
+        "name": "Vermont Legal Aid",
+        "urls": ["https://www.vtlegalaid.org/"],
+        "town": "Burlington", "county": "Chittenden",
+        "mission": "Justice & Legal",
+        "source_url": "https://www.vtlegalaid.org/"
+    },
+    {
+        "name": "Legal Services Vermont",
+        "urls": ["https://legalservicesvt.org/"],
+        "town": "Burlington", "county": "Chittenden",
+        "mission": "Justice & Legal",
+        "source_url": "https://legalservicesvt.org/"
+    },
+    {
+        "name": "Vermont Partnership for Fairness and Diversity",
+        "urls": ["http://www.vermontpartnership.org/"],
+        "town": "Montpelier", "county": "Washington",
+        "mission": "Justice & Legal",
+        "source_url": "http://www.vermontpartnership.org/"
+    },
+    {
+        "name": "Somali Bantu Community Association of Vermont",
+        "urls": ["https://somalibantuvermont.org"],
+        "town": "Burlington", "county": "Chittenden",
+        "mission": "Justice & Legal",
+        "source_url": "https://somalibantuvermont.org"
+    },
+    {
+        "name": "Rutland Area NAACP",
+        "urls": ["https://naacprutland.org"],
+        "town": "Rutland", "county": "Rutland",
+        "mission": "Justice & Legal",
+        "source_url": "https://naacprutland.org"
+    },
+    {
+        "name": "Disability Rights Vermont",
+        "urls": ["https://disabilityrightsvt.org/"],
+        "town": "Montpelier", "county": "Washington",
+        "mission": "Justice & Legal",
+        "source_url": "https://disabilityrightsvt.org/"
+    },
+    {
+        "name": "Vermont Asylum Assistance Project",
+        "urls": ["https://www.vaapvt.org/"],
+        "town": "Burlington", "county": "Chittenden",
+        "mission": "Justice & Legal",
+        "source_url": "https://www.vaapvt.org/"
+    },
+    {
+        "name": "Community Justice Network of Vermont",
+        "urls": ["https://cjnvt.org/"],
+        "town": "Montpelier", "county": "Washington",
+        "mission": "Justice & Legal",
+        "source_url": "https://cjnvt.org/"
+    },
 ]
 
 facebook_nonprofits = [
@@ -1214,6 +1326,20 @@ facebook_nonprofits = [
         "town": "Barre", "county": "Washington",
         "mission": "Bikes & Pedestrian",
         "source_url": "https://prideridesvt.com/"
+    },
+    {
+        "name": "Community Voices for Immigrant Rights",
+        "facebook_url": "https://www.facebook.com/CVIRBurlington/",
+        "town": "Burlington", "county": "Chittenden",
+        "mission": "Justice & Legal",
+        "source_url": "https://www.facebook.com/CVIRBurlington/"
+    },
+    {
+        "name": "Racial Equity Alliance of Lamoille",
+        "facebook_url": "https://www.facebook.com/REALamoilleVT/",
+        "town": "Morrisville", "county": "Lamoille",
+        "mission": "Justice & Legal",
+        "source_url": "https://www.facebook.com/REALamoilleVT/"
     },
 ]
 
