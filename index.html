@@ -445,7 +445,9 @@
 
   // Apply dropdown filters
   async function applyFilters() {
+    console.log('[clear-debug] applyFilters called, search value:', document.getElementById('searchInput').value);
     updateActiveTags();
+    console.log('[clear-debug] activeTags innerHTML after update:', document.getElementById('activeTags').innerHTML);
     await loadData();
   }
 
