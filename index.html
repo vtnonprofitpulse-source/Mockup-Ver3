@@ -443,11 +443,15 @@
   const SEARCH_CONNECTORS = new Set(['of', 'for', 'the', 'in', 'and', 'a', 'an']);
 
   async function loadOrgList() {
+    console.log('[search-debug] loadOrgList() called');
     try {
       const res = await fetch('/api/content?namesOnly=1');
+      console.log('[search-debug] fetch responded, status:', res.status);
       const json = await res.json();
       orgList = json.data || [];
+      console.log('[search-debug] orgList loaded, count:', orgList.length, orgList);
     } catch (e) {
+      console.log('[search-debug] loadOrgList FAILED:', e);
       orgList = [];
     }
   }
