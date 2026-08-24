@@ -3,7 +3,17 @@ import { neon } from '@neondatabase/serverless';
 export default async function handler(req, res) {
   try {
     const sql = neon(process.env.DATABASE_URL);
-    const { type, county, town, mission, search } = req.query;
+    const { type, county, town, mission, search, namesOnly } = req.query;
+
+    if (namesOnly) {
+      const orgs = await sql(
+        `SELECT organization_name, town, county, mission_area
+         FROM organizations WHERE status = 'active'
+         ORDER BY organization_name ASC`
+      );
+      res.status(200).json({ success: true, count: orgs.length, data: orgs });
+      return;
+    }
 
     let contentQuery = `SELECT c.id, c.organization_name, c.content_type, c.title, c.description, c.town, c.county, c.mission_area, c.source_url, c.event_date, c.recurrence_pattern, c.status, 'content' as record_type, COALESCE(o2.featured, false) as featured FROM content c LEFT JOIN organizations o2 ON o2.organization_name = c.organization_name WHERE c.status = 'active' AND (c.event_date IS NULL OR c.event_date >= CURRENT_DATE)`;
 
@@ -36,8 +46,8 @@ export default async function handler(req, res) {
       paramCount++;
     }
     if (search) {
-      contentQuery += ` AND (LOWER(c.title) LIKE LOWER($${paramCount}) OR LOWER(c.description) LIKE LOWER($${paramCount}) OR LOWER(c.organization_name) LIKE LOWER($${paramCount}))`;
-      orgsQuery += ` AND (LOWER(o.organization_name) LIKE LOWER($${paramCount}) OR LOWER(o.mission_statement) LIKE LOWER($${paramCount}))`;
+      contentQuery += ` AND (LOWER(c.title) LIKE LOWER($${paramCount}) OR LOWER(c.description) LIKE LOWER($${paramCount}) OR LOWER(c.organization_name) LIKE LOWER($${paramCount}) OR LOWER(c.town) LIKE LOWER($${paramCount}) OR LOWER(c.county) LIKE LOWER($${paramCount}))`;
+      orgsQuery += ` AND (LOWER(o.organization_name) LIKE LOWER($${paramCount}) OR LOWER(o.mission_statement) LIKE LOWER($${paramCount}) OR LOWER(o.town) LIKE LOWER($${paramCount}) OR LOWER(o.county) LIKE LOWER($${paramCount}))`;
       params.push(`%${search}%`);
       paramCount++;
     }
