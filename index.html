@@ -106,10 +106,13 @@
 <div class="hero">
   <h1>What's happening across Vermont's nonprofits</h1>
   <p>Events, volunteer opportunities, fundraisers, and news — all in one place, updated daily</p>
-  <div class="search-bar" style="position: relative;">
-    <input type="text" id="searchInput" placeholder="🔍   Search by keyword, organization, or topic..." autocomplete="off" />
-    <button onclick="applyFilters()">Search</button>
-    <div id="searchSuggestions" style="display:none; position:absolute; top:100%; left:0; right:0; background:#ff0000; border:6px solid #00ff00; border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,0.2); margin-top:4px; overflow:hidden; z-index:9999; text-align:left; min-height:60px;"></div>
+  <div style="position: relative; max-width: 540px; margin: 0 auto;">
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="🔍   Search by keyword, organization, or topic..." autocomplete="off" />
+      <button onclick="applyFilters()">Search</button>
+    </div>
+    <div id="searchSuggestions" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,0.2); margin-top:4px; overflow:hidden; z-index:9999; text-align:left;"></div>
+  </div>
   </div>
 </div>
 
@@ -443,15 +446,11 @@
   const SEARCH_CONNECTORS = new Set(['of', 'for', 'the', 'in', 'and', 'a', 'an']);
 
   async function loadOrgList() {
-    console.log('[search-debug] loadOrgList() called');
     try {
       const res = await fetch('/api/content?namesOnly=1');
-      console.log('[search-debug] fetch responded, status:', res.status);
       const json = await res.json();
       orgList = json.data || [];
-      console.log('[search-debug] orgList loaded, count:', orgList.length, orgList);
     } catch (e) {
-      console.log('[search-debug] loadOrgList FAILED:', e);
       orgList = [];
     }
   }
@@ -477,12 +476,9 @@
   }
 
   function showSuggestions(term) {
-    console.log('[search-debug] showSuggestions called with term:', term);
     const box = document.getElementById('searchSuggestions');
-    console.log('[search-debug] box element found:', box);
     if (!term.trim()) { box.style.display = 'none'; return; }
     const matches = orgList.filter(o => matchesOrgSearch(o.organization_name, term)).slice(0, 8);
-    console.log('[search-debug] matches found:', matches.length, matches);
     if (matches.length === 0) { box.style.display = 'none'; return; }
     box.innerHTML = matches.map(o =>
       `<div class="suggestion-item" style="padding:10px 16px; cursor:pointer; border-bottom:1px solid #eee; color:#222;"
@@ -492,9 +488,6 @@
        </div>`
     ).join('');
     box.style.display = 'block';
-    const rect = box.getBoundingClientRect();
-    console.log('[search-debug] box position/size:', JSON.stringify(rect));
-    console.log('[search-debug] box innerHTML length:', box.innerHTML.length);
   }
 
   function selectSuggestion(name) {
