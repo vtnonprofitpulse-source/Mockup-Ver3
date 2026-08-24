@@ -113,6 +113,7 @@
     </div>
     <div id="searchSuggestions" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,0.2); margin-top:4px; overflow:hidden; z-index:9999; text-align:left;"></div>
   </div>
+  <div id="activeTags" style="max-width:540px; margin:12px auto 0; display:flex; gap:8px; flex-wrap:wrap; justify-content:center;"></div>
   </div>
 </div>
 
@@ -225,7 +226,6 @@
       <option value="month">This month</option>
     </select>
   </div>
-  <div class="active-filters" id="activeTags"></div>
 </div>
 
 <div class="results-bar">
@@ -445,9 +445,7 @@
 
   // Apply dropdown filters
   async function applyFilters() {
-    console.log('[clear-debug] applyFilters called, search value:', document.getElementById('searchInput').value);
     updateActiveTags();
-    console.log('[clear-debug] activeTags innerHTML after update:', document.getElementById('activeTags').innerHTML);
     await loadData();
   }
 
