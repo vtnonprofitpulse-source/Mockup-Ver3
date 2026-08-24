@@ -477,9 +477,12 @@
   }
 
   function showSuggestions(term) {
+    console.log('[search-debug] showSuggestions called with term:', term);
     const box = document.getElementById('searchSuggestions');
+    console.log('[search-debug] box element found:', box);
     if (!term.trim()) { box.style.display = 'none'; return; }
     const matches = orgList.filter(o => matchesOrgSearch(o.organization_name, term)).slice(0, 8);
+    console.log('[search-debug] matches found:', matches.length, matches);
     if (matches.length === 0) { box.style.display = 'none'; return; }
     box.innerHTML = matches.map(o =>
       `<div class="suggestion-item" style="padding:10px 16px; cursor:pointer; border-bottom:1px solid #eee; color:#222;"
@@ -489,6 +492,7 @@
        </div>`
     ).join('');
     box.style.display = 'block';
+    console.log('[search-debug] box.style.display set to block, actual computed display:', window.getComputedStyle(box).display);
   }
 
   function selectSuggestion(name) {
