@@ -256,6 +256,7 @@
 <script>
   let allData = [];
   let currentMission = 'Bikes & Pedestrian';
+  let missionExplicitlySelected = false;
 
   // Badge colors
   function getBadgeClass(type) {
@@ -400,6 +401,7 @@
     document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
     event.target.closest('.pill').classList.add('active');
     currentMission = mission;
+    missionExplicitlySelected = true;
     updateActiveTags();
     await loadData();
   }
@@ -516,7 +518,8 @@
     document.getElementById('resultsCount').textContent = 'Loading...';
 
     const params = {};
-    if (currentMission) params.mission = currentMission;
+    const hasSearchTerm = !!document.getElementById('searchInput').value.trim();
+    if (currentMission && (missionExplicitlySelected || !hasSearchTerm)) params.mission = currentMission;
     if (document.getElementById('typeFilter').value) params.type = document.getElementById('typeFilter').value;
     if (document.getElementById('countyFilter').value) params.county = document.getElementById('countyFilter').value;
     if (document.getElementById('townFilter').value) params.town = document.getElementById('townFilter').value;
