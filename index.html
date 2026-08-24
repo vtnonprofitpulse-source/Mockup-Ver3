@@ -106,9 +106,10 @@
 <div class="hero">
   <h1>What's happening across Vermont's nonprofits</h1>
   <p>Events, volunteer opportunities, fundraisers, and news — all in one place, updated daily</p>
-  <div class="search-bar">
-    <input type="text" id="searchInput" placeholder="🔍   Search by keyword, organization, or topic..." />
+  <div class="search-bar" style="position: relative;">
+    <input type="text" id="searchInput" placeholder="🔍   Search by keyword, organization, or topic..." autocomplete="off" />
     <button onclick="applyFilters()">Search</button>
+    <div id="searchSuggestions" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,0.2); margin-top:4px; overflow:hidden; z-index:100; text-align:left;"></div>
   </div>
 </div>
 
@@ -435,6 +436,78 @@
   }
 
   // Main load function
+  // Autocomplete search - org list cached once, matched by substring or acronym
+  // (e.g. "OSH" matches "Old Spokes Home"). Tested against real org names,
+  // including a collision check, before shipping (August 2026).
+  let orgList = [];
+  const SEARCH_CONNECTORS = new Set(['of', 'for', 'the', 'in', 'and', 'a', 'an']);
+
+  async function loadOrgList() {
+    try {
+      const res = await fetch('/api/content?namesOnly=1');
+      const json = await res.json();
+      orgList = json.data || [];
+    } catch (e) {
+      orgList = [];
+    }
+  }
+
+  function orgInitials(name) {
+    return name
+      .split(/\s+/)
+      .filter(w => /^[A-Za-z]/.test(w))
+      .filter(w => !SEARCH_CONNECTORS.has(w.toLowerCase()))
+      .map(w => w[0].toLowerCase())
+      .join('');
+  }
+
+  function matchesOrgSearch(orgName, term) {
+    const name = orgName.toLowerCase();
+    const t = term.toLowerCase().trim();
+    if (!t) return false;
+    if (name.includes(t)) return true;
+    const initials = orgInitials(orgName);
+    if (initials === t) return true;
+    if (initials.startsWith(t) && t.length >= 2) return true;
+    return false;
+  }
+
+  function showSuggestions(term) {
+    const box = document.getElementById('searchSuggestions');
+    if (!term.trim()) { box.style.display = 'none'; return; }
+    const matches = orgList.filter(o => matchesOrgSearch(o.organization_name, term)).slice(0, 8);
+    if (matches.length === 0) { box.style.display = 'none'; return; }
+    box.innerHTML = matches.map(o =>
+      `<div class="suggestion-item" style="padding:10px 16px; cursor:pointer; border-bottom:1px solid #eee; color:#222;"
+            onmousedown="selectSuggestion('${o.organization_name.replace(/'/g, "\\'")}')">
+         <strong>${o.organization_name}</strong>
+         <span style="color:#888; font-size:12px;"> — ${o.town || ''}${o.mission_area ? ' · ' + o.mission_area : ''}</span>
+       </div>`
+    ).join('');
+    box.style.display = 'block';
+  }
+
+  function selectSuggestion(name) {
+    document.getElementById('searchInput').value = name;
+    document.getElementById('searchSuggestions').style.display = 'none';
+    applyFilters();
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    loadOrgList();
+    const input = document.getElementById('searchInput');
+    input.addEventListener('input', () => showSuggestions(input.value));
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        document.getElementById('searchSuggestions').style.display = 'none';
+        applyFilters();
+      }
+    });
+    input.addEventListener('blur', () => {
+      setTimeout(() => { document.getElementById('searchSuggestions').style.display = 'none'; }, 150);
+    });
+  });
+
   async function loadData() {
     document.getElementById('cardsContainer').innerHTML = '<div class="loading">Loading...</div>';
     document.getElementById('resultsCount').textContent = 'Loading...';
