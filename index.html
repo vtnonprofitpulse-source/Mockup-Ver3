@@ -492,7 +492,9 @@
        </div>`
     ).join('');
     box.style.display = 'block';
-    console.log('[search-debug] box.style.display set to block, actual computed display:', window.getComputedStyle(box).display);
+    const rect = box.getBoundingClientRect();
+    console.log('[search-debug] box position/size:', JSON.stringify(rect));
+    console.log('[search-debug] box innerHTML length:', box.innerHTML.length);
   }
 
   function selectSuggestion(name) {
