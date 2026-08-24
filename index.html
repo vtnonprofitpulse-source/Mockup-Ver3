@@ -411,10 +411,18 @@
     const tags = document.getElementById('activeTags');
     const parts = [];
     if (currentMission) parts.push(`<span class="filter-tag" onclick="clearMission()">🚴 ${currentMission} ✕</span>`);
+    const searchTerm = document.getElementById('searchInput').value.trim();
+    if (searchTerm) parts.push(`<span class="filter-tag" onclick="clearSearch()">🔍 ${searchTerm} ✕</span>`);
     if (parts.length > 0) {
       parts.push(`<button class="clear-btn" onclick="clearAll()">Clear all</button>`);
     }
     tags.innerHTML = parts.join('');
+  }
+
+  function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    updateActiveTags();
+    loadData();
   }
 
   function clearMission() {
@@ -437,6 +445,7 @@
 
   // Apply dropdown filters
   async function applyFilters() {
+    updateActiveTags();
     await loadData();
   }
 
