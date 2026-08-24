@@ -114,6 +114,7 @@
     <div id="searchSuggestions" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,0.2); margin-top:4px; overflow:hidden; z-index:9999; text-align:left;"></div>
   </div>
   <div id="activeTags" style="max-width:540px; margin:12px auto 0; display:flex; gap:8px; flex-wrap:wrap; justify-content:center;"></div>
+  <div id="guidanceMessage" style="display:none; text-align:center; color:#fff; font-size:14px; margin-top:12px;"></div>
   </div>
 </div>
 
@@ -530,11 +531,14 @@
       document.getElementById('townFilter').value;
 
     if (!hasAnyFilter) {
-      document.getElementById('cardsContainer').innerHTML =
-        '<div class="no-results">Choose a category above, or search for a keyword, organization, or town, to see results.</div>';
+      document.getElementById('guidanceMessage').textContent =
+        'Choose a category above, or search for a keyword, organization, or town, to see results.';
+      document.getElementById('guidanceMessage').style.display = 'block';
+      document.getElementById('cardsContainer').innerHTML = '';
       document.getElementById('resultsCount').textContent = 'Select a category or search to get started';
       return;
     }
+    document.getElementById('guidanceMessage').style.display = 'none';
 
     document.getElementById('cardsContainer').innerHTML = '<div class="loading">Loading...</div>';
     document.getElementById('resultsCount').textContent = 'Loading...';
