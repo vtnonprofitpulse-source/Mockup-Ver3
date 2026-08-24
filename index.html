@@ -523,11 +523,23 @@
   });
 
   async function loadData() {
+    const hasSearchTerm = !!document.getElementById('searchInput').value.trim();
+    const hasAnyFilter = currentMission || hasSearchTerm ||
+      document.getElementById('typeFilter').value ||
+      document.getElementById('countyFilter').value ||
+      document.getElementById('townFilter').value;
+
+    if (!hasAnyFilter) {
+      document.getElementById('cardsContainer').innerHTML =
+        '<div class="no-results">Choose a category above, or search for a keyword, organization, or town, to see results.</div>';
+      document.getElementById('resultsCount').textContent = 'Select a category or search to get started';
+      return;
+    }
+
     document.getElementById('cardsContainer').innerHTML = '<div class="loading">Loading...</div>';
     document.getElementById('resultsCount').textContent = 'Loading...';
 
     const params = {};
-    const hasSearchTerm = !!document.getElementById('searchInput').value.trim();
     if (currentMission && (missionExplicitlySelected || !hasSearchTerm)) params.mission = currentMission;
     if (document.getElementById('typeFilter').value) params.type = document.getElementById('typeFilter').value;
     if (document.getElementById('countyFilter').value) params.county = document.getElementById('countyFilter').value;
