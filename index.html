@@ -98,7 +98,7 @@
   </div>
   <div class="nav-btns">
     <span class="alpha-badge">⚗️ Alpha</span>
-    <button class="nav-btn">About</button>
+    <button class="nav-btn" onclick="document.getElementById('aboutModal').style.display='flex'">About</button>
     <button class="nav-btn">Add your nonprofit</button>
   </div>
 </div>
@@ -562,6 +562,29 @@
   // Load on page start with Bikes & Pedestrian selected
   loadData();
 </script>
+
+<div id="aboutModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:10000; align-items:center; justify-content:center; padding:20px;" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:#fff; border-radius:12px; max-width:640px; width:100%; max-height:85vh; overflow-y:auto; padding:32px;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
+      <h2 style="color:#1a56a0; font-size:22px; margin:0;">About Vermont Nonprofit Pulse</h2>
+      <button onclick="document.getElementById('aboutModal').style.display='none'" style="background:none; border:none; font-size:22px; cursor:pointer; color:#888; line-height:1;">&times;</button>
+    </div>
+
+    <p style="font-size:14px; line-height:1.6; color:#222;">Vermont Nonprofit Pulse is a Vermont-based nonprofit showcasing events, volunteer opportunities, fundraisers, and news from nonprofits across the state — automatically gathering information already on nonprofit websites and calendars, and creating a centralized website to build local involvement.</p>
+
+    <h3 style="color:#1a56a0; font-size:16px; margin-top:24px;">How it works</h3>
+    <p style="font-size:14px; line-height:1.6; color:#222;">Each day, our system checks participating nonprofits' own websites, Facebook pages, and calendars for new events, volunteer opportunities, fundraisers, and news — then organizes everything into one place, so you don't have to visit dozens of separate sites to find out what's happening.</p>
+
+    <h3 style="color:#1a56a0; font-size:16px; margin-top:24px;">Where we are today</h3>
+    <p style="font-size:14px; line-height:1.6; color:#222;">We're in <strong>alpha</strong> — an early, actively growing stage. We currently cover Bikes &amp; Pedestrian and Justice &amp; Legal organizations, with many more mission areas planned as we expand across Vermont's nonprofit sector.</p>
+
+    <h3 style="color:#1a56a0; font-size:16px; margin-top:24px;">Who we are</h3>
+    <p style="font-size:14px; line-height:1.6; color:#222;">Vermont Nonprofit Pulse, Inc. is a Vermont nonprofit corporation, run by a small volunteer team.</p>
+
+    <h3 style="color:#1a56a0; font-size:16px; margin-top:24px;">Know a nonprofit we should include?</h3>
+    <p style="font-size:14px; line-height:1.6; color:#222;">Use the "Add your nonprofit" button to let us know.</p>
+  </div>
+</div>
 
 </body>
 </html>
