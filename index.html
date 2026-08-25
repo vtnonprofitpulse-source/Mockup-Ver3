@@ -118,7 +118,7 @@
   </div>
 </div>
 
-<div class="cat-section">
+<div class="cat-section" id="catSection">
   <div class="cat-section-title">Browse by mission area</div>
   <div class="cat-group">
     <div class="cat-group-label">People &amp; Community</div>
@@ -171,6 +171,7 @@
     </div>
   </div>
 </div>
+<div id="catToggle" style="display:none; text-align:center; padding:8px; cursor:pointer; color:#1a56a0; font-size:13px; font-weight:bold; border-bottom:1px solid #eee;" onclick="toggleCategorySection()">▼ Browse by mission area</div>
 
 <div class="filters2">
   <div class="filter-group">
@@ -426,6 +427,14 @@
     loadData();
   }
 
+  function toggleCategorySection() {
+    const catSection = document.getElementById('catSection');
+    const catToggle = document.getElementById('catToggle');
+    const isHidden = catSection.style.display === 'none';
+    catSection.style.display = isHidden ? '' : 'none';
+    catToggle.textContent = isHidden ? '▲ Hide categories' : '▼ Browse by mission area';
+  }
+
   function clearMission() {
     currentMission = '';
     document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
@@ -525,6 +534,21 @@
 
   async function loadData() {
     const hasSearchTerm = !!document.getElementById('searchInput').value.trim();
+
+    // Collapse the category browser once a search is active, so results
+    // are immediately visible without scrolling past 25 categories -
+    // especially important on phones. Suggested by Jason at FPF.
+    const catSection = document.getElementById('catSection');
+    const catToggle = document.getElementById('catToggle');
+    if (hasSearchTerm) {
+      catSection.style.display = 'none';
+      catToggle.style.display = 'block';
+      catToggle.textContent = '▼ Browse by mission area';
+    } else {
+      catSection.style.display = '';
+      catToggle.style.display = 'none';
+    }
+
     const hasAnyFilter = currentMission || hasSearchTerm ||
       document.getElementById('typeFilter').value ||
       document.getElementById('countyFilter').value ||
