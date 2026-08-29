@@ -372,7 +372,9 @@
       const missionWasApplied = currentMission && (missionExplicitlySelected || !hasSearchTerm) && !searchAllOverride;
       if (hasSearchTerm && missionWasApplied) {
         const term = document.getElementById('searchInput').value.trim();
-        container.innerHTML = `<div class="no-results">No results for "${term}" in ${currentMission}.<br><br><span style="color:#1a56a0; cursor:pointer; text-decoration:underline; font-weight:bold;" onclick="searchAllCategories()">Search all categories instead →</span></div>`;
+        document.getElementById('guidanceMessage').innerHTML = `No results for "${term}" in ${currentMission}. <span style="color:#f59e0b; cursor:pointer; text-decoration:underline; font-weight:bold;" onclick="searchAllCategories()">Search all categories instead →</span>`;
+        document.getElementById('guidanceMessage').style.display = 'block';
+        container.innerHTML = '';
       } else {
         container.innerHTML = '<div class="no-results">No results found — try adjusting your filters.</div>';
       }
