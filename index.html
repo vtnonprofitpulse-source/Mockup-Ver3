@@ -33,7 +33,7 @@
   .pill:hover { background: #e8f0fe; border-color: #1a56a0; color: #1a56a0; }
   .pill.active { background: #1a56a0; border-color: #1a56a0; color: #fff; }
 
-  .filters2 { background: #fafafa; border-bottom: 1px solid #ddd; padding: 12px 24px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .filters2 { background: #fff; border-bottom: 1px solid #ddd; padding: 12px 24px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
   .filter-group { display: flex; flex-direction: column; gap: 3px; }
   .filter-group label { font-size: 11px; color: #000; }
   .filter-group select { padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: #fff; }
@@ -113,9 +113,16 @@
     </div>
     <div id="searchSuggestions" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,0.2); margin-top:4px; overflow:hidden; z-index:9999; text-align:left;"></div>
   </div>
-  <div style="max-width:540px; margin:12px auto 0; text-align:center;">
-    <select id="categoryJump" onchange="if(this.value) filterByMission(this.value)" style="padding:10px 16px; border-radius:8px; border:none; font-size:14px; width:100%; max-width:320px; cursor:pointer;">
-      <option value="">Or jump straight to a category…</option>
+  <div id="guidanceMessage" style="display:none; max-width:540px; margin:12px auto 0; background:#fff; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.2); padding:16px 20px; text-align:center; color:#222; font-size:16px; font-weight:bold;"></div>
+  <div id="activeTags" style="max-width:540px; margin:12px auto 0; display:flex; gap:8px; flex-wrap:wrap; justify-content:center;"></div>
+  </div>
+</div>
+
+<div class="filters2">
+  <div class="filter-group">
+    <label>Category</label>
+    <select id="categoryJump" onchange="if(this.value) filterByMission(this.value); else clearMission();">
+      <option value="">All categories (A-Z)</option>
         <option value="Agriculture & Farming">🌾 Agriculture &amp; Farming — Environment &amp; Outdoors</option>
         <option value="Animals & Wildlife">🐾 Animals &amp; Wildlife — Environment &amp; Outdoors</option>
         <option value="Arts & Culture">🎨 Arts &amp; Culture — Arts &amp; Learning</option>
@@ -143,67 +150,6 @@
         <option value="Volunteering & Civic">🤝 Volunteering &amp; Civic — Community &amp; Civic</option>
     </select>
   </div>
-  <div id="guidanceMessage" style="display:none; max-width:540px; margin:12px auto 0; background:#fff; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.2); padding:16px 20px; text-align:center; color:#222; font-size:16px; font-weight:bold;"></div>
-  <div id="activeTags" style="max-width:540px; margin:12px auto 0; display:flex; gap:8px; flex-wrap:wrap; justify-content:center;"></div>
-  </div>
-</div>
-
-<div class="cat-section" id="catSection">
-  <div class="cat-section-title">Browse by mission area</div>
-  <div class="cat-group">
-    <div class="cat-group-label">People &amp; Community</div>
-    <div class="cat-pills">
-      <span class="pill" onclick="filterByMission('Food & Hunger')">🥦 Food &amp; Hunger</span>
-      <span class="pill" onclick="filterByMission('Housing & Shelter')">🏠 Housing &amp; Shelter</span>
-      <span class="pill" onclick="filterByMission('Health & Wellness')">❤️ Health &amp; Wellness</span>
-      <span class="pill" onclick="filterByMission('Mental Health')">🧠 Mental Health</span>
-      <span class="pill" onclick="filterByMission('Children & Youth')">👶 Children &amp; Youth</span>
-      <span class="pill" onclick="filterByMission('Education')">🎓 Education</span>
-      <span class="pill" onclick="filterByMission('Seniors & Aging')">👴 Seniors &amp; Aging</span>
-      <span class="pill" onclick="filterByMission('Disability & Accessibility')">♿ Disability &amp; Accessibility</span>
-      <span class="pill" onclick="filterByMission('Families & Human Services')">👨‍👩‍👧 Families &amp; Human Services</span>
-      <span class="pill" onclick="filterByMission('Justice & Legal')">🔒 Justice &amp; Legal</span>
-    </div>
-  </div>
-  <div class="cat-group">
-    <div class="cat-group-label">Community &amp; Civic</div>
-    <div class="cat-pills">
-      <span class="pill" onclick="filterByMission('Volunteering & Civic')">🤝 Volunteering &amp; Civic</span>
-      <span class="pill" onclick="filterByMission('Civil Rights & Advocacy')">✊ Civil Rights &amp; Advocacy</span>
-      <span class="pill" onclick="filterByMission('Community Development')">🏘️ Community Development</span>
-      <span class="pill" onclick="filterByMission('Public Safety & Emergency')">🚨 Public Safety &amp; Emergency</span>
-      <span class="pill" onclick="filterByMission('Employment & Job Training')">💼 Employment &amp; Job Training</span>
-    </div>
-  </div>
-  <div class="cat-group">
-    <div class="cat-group-label">Environment &amp; Outdoors</div>
-    <div class="cat-pills">
-      <span class="pill" onclick="filterByMission('Environment & Conservation')">🌿 Environment &amp; Conservation</span>
-      <span class="pill" onclick="filterByMission('Agriculture & Farming')">🌾 Agriculture &amp; Farming</span>
-      <span class="pill active" onclick="filterByMission('Bikes & Pedestrian')">🚴 Bikes &amp; Pedestrian</span>
-      <span class="pill" onclick="filterByMission('Recreation & Sports')">🏃 Recreation &amp; Sports</span>
-      <span class="pill" onclick="filterByMission('Animals & Wildlife')">🐾 Animals &amp; Wildlife</span>
-    </div>
-  </div>
-  <div class="cat-group">
-    <div class="cat-group-label">Arts &amp; Learning</div>
-    <div class="cat-pills">
-      <span class="pill" onclick="filterByMission('Arts & Culture')">🎨 Arts &amp; Culture</span>
-      <span class="pill" onclick="filterByMission('Humanities')">🎭 Humanities</span>
-      <span class="pill" onclick="filterByMission('Science & Research')">🔬 Science &amp; Research</span>
-    </div>
-  </div>
-  <div class="cat-group">
-    <div class="cat-group-label">Giving &amp; Support</div>
-    <div class="cat-pills">
-      <span class="pill" onclick="filterByMission('Philanthropy & Grantmaking')">💛 Philanthropy &amp; Grantmaking</span>
-      <span class="pill" onclick="filterByMission('International & Global')">🌍 International &amp; Global</span>
-    </div>
-  </div>
-</div>
-<div id="catToggle" style="display:none; text-align:center; padding:8px; cursor:pointer; color:#1a56a0; font-size:13px; font-weight:bold; border-bottom:1px solid #eee;" onclick="toggleCategorySection()">▼ Browse by mission area</div>
-
-<div class="filters2">
   <div class="filter-group">
     <label>Type</label>
     <select id="typeFilter" onchange="applyFilters()">
@@ -494,14 +440,6 @@
     loadData();
   }
 
-  function toggleCategorySection() {
-    const catSection = document.getElementById('catSection');
-    const catToggle = document.getElementById('catToggle');
-    const isHidden = catSection.style.display === 'none';
-    catSection.style.display = isHidden ? '' : 'none';
-    catToggle.textContent = isHidden ? '▲ Hide categories' : '▼ Browse by mission area';
-  }
-
   function searchAllCategories() {
     searchAllOverride = true;
     loadData();
@@ -654,24 +592,6 @@
 
   async function loadData() {
     const hasSearchTerm = !!document.getElementById('searchInput').value.trim();
-
-    // Collapse the category browser once a search is active, or once the
-    // user has explicitly picked a category, so results are immediately
-    // visible without scrolling past 25 categories - especially important
-    // on phones. Suggested by Jason at FPF. Uses missionExplicitlySelected
-    // (not just currentMission) so the default initial state - which
-    // already has Bikes & Pedestrian selected - doesn't collapse on the
-    // very first page load, before a visitor has seen the categories.
-    const catSection = document.getElementById('catSection');
-    const catToggle = document.getElementById('catToggle');
-    if (hasSearchTerm || missionExplicitlySelected) {
-      catSection.style.display = 'none';
-      catToggle.style.display = 'block';
-      catToggle.textContent = '▼ Browse by mission area';
-    } else {
-      catSection.style.display = '';
-      catToggle.style.display = 'none';
-    }
 
     const hasAnyFilter = currentMission || hasSearchTerm ||
       document.getElementById('typeFilter').value ||
