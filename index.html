@@ -113,6 +113,46 @@
     </div>
     <div id="searchSuggestions" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,0.2); margin-top:4px; overflow:hidden; z-index:9999; text-align:left;"></div>
   </div>
+  <div style="max-width:540px; margin:12px auto 0; text-align:center;">
+    <select id="categoryJump" onchange="if(this.value) filterByMission(this.value)" style="padding:10px 16px; border-radius:8px; border:none; font-size:14px; width:100%; max-width:320px; cursor:pointer;">
+      <option value="">Or jump straight to a category…</option>
+      <optgroup label="People & Community">
+        <option value="Food & Hunger">🥦 Food &amp; Hunger</option>
+        <option value="Housing & Shelter">🏠 Housing &amp; Shelter</option>
+        <option value="Health & Wellness">❤️ Health &amp; Wellness</option>
+        <option value="Mental Health">🧠 Mental Health</option>
+        <option value="Children & Youth">👶 Children &amp; Youth</option>
+        <option value="Education">🎓 Education</option>
+        <option value="Seniors & Aging">👴 Seniors &amp; Aging</option>
+        <option value="Disability & Accessibility">♿ Disability &amp; Accessibility</option>
+        <option value="Families & Human Services">👨‍👩‍👧 Families &amp; Human Services</option>
+        <option value="Justice & Legal">🔒 Justice &amp; Legal</option>
+      </optgroup>
+      <optgroup label="Community & Civic">
+        <option value="Volunteering & Civic">🤝 Volunteering &amp; Civic</option>
+        <option value="Civil Rights & Advocacy">✊ Civil Rights &amp; Advocacy</option>
+        <option value="Community Development">🏘️ Community Development</option>
+        <option value="Public Safety & Emergency">🚨 Public Safety &amp; Emergency</option>
+        <option value="Employment & Job Training">💼 Employment &amp; Job Training</option>
+      </optgroup>
+      <optgroup label="Environment & Outdoors">
+        <option value="Environment & Conservation">🌿 Environment &amp; Conservation</option>
+        <option value="Agriculture & Farming">🌾 Agriculture &amp; Farming</option>
+        <option value="Bikes & Pedestrian">🚴 Bikes &amp; Pedestrian</option>
+        <option value="Recreation & Sports">🏃 Recreation &amp; Sports</option>
+        <option value="Animals & Wildlife">🐾 Animals &amp; Wildlife</option>
+      </optgroup>
+      <optgroup label="Arts & Learning">
+        <option value="Arts & Culture">🎨 Arts &amp; Culture</option>
+        <option value="Humanities">🎭 Humanities</option>
+        <option value="Science & Research">🔬 Science &amp; Research</option>
+      </optgroup>
+      <optgroup label="Giving & Support">
+        <option value="Philanthropy & Grantmaking">💛 Philanthropy &amp; Grantmaking</option>
+        <option value="International & Global">🌍 International &amp; Global</option>
+      </optgroup>
+    </select>
+  </div>
   <div id="guidanceMessage" style="display:none; max-width:540px; margin:12px auto 0; background:#fff; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.2); padding:16px 20px; text-align:center; color:#222; font-size:16px; font-weight:bold;"></div>
   <div id="activeTags" style="max-width:540px; margin:12px auto 0; display:flex; gap:8px; flex-wrap:wrap; justify-content:center;"></div>
   </div>
@@ -433,7 +473,10 @@
   // Filter by mission pill
   async function filterByMission(mission) {
     document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-    event.target.closest('.pill').classList.add('active');
+    document.querySelectorAll('.pill').forEach(p => {
+      if (p.getAttribute('onclick') === `filterByMission('${mission}')`) p.classList.add('active');
+    });
+    document.getElementById('categoryJump').value = mission;
     currentMission = mission;
     missionExplicitlySelected = true;
     searchAllOverride = false;
@@ -507,6 +550,7 @@
     document.querySelectorAll('.pill').forEach(p => {
       if (p.textContent.trim().includes(category)) p.classList.add('active');
     });
+    document.getElementById('categoryJump').value = category;
     currentMission = category;
     missionExplicitlySelected = true;
     document.getElementById('searchInput').value = '';
@@ -520,6 +564,7 @@
     missionExplicitlySelected = false;
     searchAllOverride = false;
     document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+    document.getElementById('categoryJump').value = '';
     updateActiveTags();
     loadData();
   }
@@ -532,6 +577,7 @@
     document.getElementById('countyFilter').value = '';
     document.getElementById('townFilter').value = '';
     document.getElementById('searchInput').value = '';
+    document.getElementById('categoryJump').value = '';
     document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
     updateActiveTags();
     loadData();
