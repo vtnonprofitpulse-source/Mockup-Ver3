@@ -113,8 +113,8 @@
     </div>
     <div id="searchSuggestions" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,0.2); margin-top:4px; overflow:hidden; z-index:9999; text-align:left;"></div>
   </div>
+  <div id="guidanceMessage" style="display:none; max-width:540px; margin:12px auto 0; background:#fff; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.2); padding:16px 20px; text-align:center; color:#222; font-size:16px; font-weight:bold;"></div>
   <div id="activeTags" style="max-width:540px; margin:12px auto 0; display:flex; gap:8px; flex-wrap:wrap; justify-content:center;"></div>
-  <div id="guidanceMessage" style="display:none; text-align:center; color:#fff; font-size:14px; margin-top:12px;"></div>
   </div>
 </div>
 
@@ -372,7 +372,7 @@
       const missionWasApplied = currentMission && (missionExplicitlySelected || !hasSearchTerm) && !searchAllOverride;
       if (hasSearchTerm && missionWasApplied) {
         const term = document.getElementById('searchInput').value.trim();
-        document.getElementById('guidanceMessage').innerHTML = `No results for "${term}" in ${currentMission}. <span style="color:#f59e0b; cursor:pointer; text-decoration:underline; font-weight:bold;" onclick="searchAllCategories()">Search all categories instead →</span>`;
+        document.getElementById('guidanceMessage').innerHTML = `No results for "${term}" in ${currentMission}. <span style="color:#1a56a0; cursor:pointer; text-decoration:underline;" onclick="searchAllCategories()">Search all categories instead →</span>`;
         document.getElementById('guidanceMessage').style.display = 'block';
         container.innerHTML = '';
       } else {
