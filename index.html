@@ -472,8 +472,17 @@
   };
 
   function suggestedCategoryFor(term) {
-    const match = CATEGORY_KEYWORDS[term.toLowerCase().trim()];
-    return (match && match !== currentMission) ? match : null;
+    const keywordMatch = CATEGORY_KEYWORDS[term.toLowerCase().trim()];
+    if (keywordMatch && keywordMatch !== currentMission) return keywordMatch;
+
+    // Also check organization names, using the same matching logic as the
+    // autocomplete dropdown - so a term like "aclu" is recognized even
+    // though it isn't in the general topical keyword list above.
+    const orgMatch = orgList.find(o => matchesOrgSearch(o.organization_name, term));
+    if (orgMatch && orgMatch.mission_area && orgMatch.mission_area !== currentMission) {
+      return orgMatch.mission_area;
+    }
+    return null;
   }
 
   function browseRelatedCategory(category) {
