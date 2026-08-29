@@ -387,6 +387,23 @@
       return;
     }
 
+    // Show a "see the full category" prompt when the search term matches
+    // a known category, even when direct results exist - so a search
+    // like "bike" (56 literal matches) or "aclu" (7 org-specific matches)
+    // still offers the complete category as a fast, one-click option,
+    // not just when results happen to be zero.
+    const hasSearchTerm = !!document.getElementById('searchInput').value.trim();
+    const missionWasApplied = currentMission && (missionExplicitlySelected || !hasSearchTerm) && !searchAllOverride;
+    if (hasSearchTerm && !missionWasApplied) {
+      const term = document.getElementById('searchInput').value.trim();
+      const related = suggestedCategoryFor(term);
+      if (related) {
+        document.getElementById('guidanceMessage').innerHTML =
+          `Showing ${items.length} result${items.length !== 1 ? 's' : ''} for "${term}". <span style="color:#1a56a0; cursor:pointer; text-decoration:underline;" onclick="browseRelatedCategory('${related.replace(/'/g, "\\'")}')">See all of ${related} instead →</span>`;
+        document.getElementById('guidanceMessage').style.display = 'block';
+      }
+    }
+
     document.getElementById('resultsCount').textContent = `${items.length} result${items.length !== 1 ? 's' : ''} · updated today`;
 
     container.innerHTML = items.map(item => `
@@ -646,10 +663,7 @@
     if (document.getElementById('searchInput').value) params.search = document.getElementById('searchInput').value;
 
     try {
-      console.log('[search-diag] currentMission:', currentMission, 'missionExplicitlySelected:', missionExplicitlySelected, 'searchAllOverride:', searchAllOverride);
-      console.log('[search-diag] params sent to API:', JSON.stringify(params));
       allData = await fetchData(params);
-      console.log('[search-diag] results count:', allData.length);
       renderCards(allData);
       updateActiveTags();
     } catch (error) {
