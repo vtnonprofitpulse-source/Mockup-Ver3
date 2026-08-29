@@ -646,7 +646,10 @@
     if (document.getElementById('searchInput').value) params.search = document.getElementById('searchInput').value;
 
     try {
+      console.log('[search-diag] currentMission:', currentMission, 'missionExplicitlySelected:', missionExplicitlySelected, 'searchAllOverride:', searchAllOverride);
+      console.log('[search-diag] params sent to API:', JSON.stringify(params));
       allData = await fetchData(params);
+      console.log('[search-diag] results count:', allData.length);
       renderCards(allData);
       updateActiveTags();
     } catch (error) {
