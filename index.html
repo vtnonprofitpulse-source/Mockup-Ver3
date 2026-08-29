@@ -259,6 +259,7 @@
   let allData = [];
   let currentMission = 'Bikes & Pedestrian';
   let missionExplicitlySelected = false;
+  let searchAllOverride = false;
 
   // Badge colors
   function getBadgeClass(type) {
@@ -367,7 +368,14 @@
     }
 
     if (items.length === 0) {
-      container.innerHTML = '<div class="no-results">No results found — try adjusting your filters.</div>';
+      const hasSearchTerm = !!document.getElementById('searchInput').value.trim();
+      const missionWasApplied = currentMission && (missionExplicitlySelected || !hasSearchTerm) && !searchAllOverride;
+      if (hasSearchTerm && missionWasApplied) {
+        const term = document.getElementById('searchInput').value.trim();
+        container.innerHTML = `<div class="no-results">No results for "${term}" in ${currentMission}.<br><br><span style="color:#1a56a0; cursor:pointer; text-decoration:underline; font-weight:bold;" onclick="searchAllCategories()">Search all categories instead →</span></div>`;
+      } else {
+        container.innerHTML = '<div class="no-results">No results found — try adjusting your filters.</div>';
+      }
       document.getElementById('resultsCount').textContent = '0 results';
       return;
     }
@@ -404,6 +412,7 @@
     event.target.closest('.pill').classList.add('active');
     currentMission = mission;
     missionExplicitlySelected = true;
+    searchAllOverride = false;
     updateActiveTags();
     await loadData();
   }
@@ -423,6 +432,7 @@
 
   function clearSearch() {
     document.getElementById('searchInput').value = '';
+    searchAllOverride = false;
     updateActiveTags();
     loadData();
   }
@@ -435,9 +445,15 @@
     catToggle.textContent = isHidden ? '▲ Hide categories' : '▼ Browse by mission area';
   }
 
+  function searchAllCategories() {
+    searchAllOverride = true;
+    loadData();
+  }
+
   function clearMission() {
     currentMission = '';
     missionExplicitlySelected = false;
+    searchAllOverride = false;
     document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
     updateActiveTags();
     loadData();
@@ -446,6 +462,7 @@
   function clearAll() {
     currentMission = '';
     missionExplicitlySelected = false;
+    searchAllOverride = false;
     document.getElementById('typeFilter').value = '';
     document.getElementById('countyFilter').value = '';
     document.getElementById('townFilter').value = '';
@@ -522,7 +539,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     loadOrgList();
     const input = document.getElementById('searchInput');
-    input.addEventListener('input', () => showSuggestions(input.value));
+    input.addEventListener('input', () => { searchAllOverride = false; showSuggestions(input.value); });
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         document.getElementById('searchSuggestions').style.display = 'none';
@@ -574,7 +591,7 @@
     document.getElementById('resultsCount').textContent = 'Loading...';
 
     const params = {};
-    if (currentMission && (missionExplicitlySelected || !hasSearchTerm)) params.mission = currentMission;
+    if (currentMission && (missionExplicitlySelected || !hasSearchTerm) && !searchAllOverride) params.mission = currentMission;
     if (document.getElementById('typeFilter').value) params.type = document.getElementById('typeFilter').value;
     if (document.getElementById('countyFilter').value) params.county = document.getElementById('countyFilter').value;
     if (document.getElementById('townFilter').value) params.town = document.getElementById('townFilter').value;
