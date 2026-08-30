@@ -237,14 +237,15 @@
 <script>
   (function() {
     const pw = document.querySelector('.page-wrap');
+    const banner = document.createElement('div');
+    banner.style.cssText = 'background:#ff0000; color:#fff; font-size:16px; font-weight:bold; padding:12px; text-align:center; font-family:monospace;';
     if (!pw) {
-      console.log('[width-diag] page-wrap element NOT FOUND in DOM');
+      banner.textContent = 'DIAG: page-wrap NOT FOUND';
     } else {
       const cs = window.getComputedStyle(pw);
-      console.log('[width-diag] page-wrap found. computed max-width:', cs.maxWidth, '| actual width:', cs.width, '| margin-left:', cs.marginLeft, '| margin-right:', cs.marginRight);
-      console.log('[width-diag] page-wrap outerHTML class attribute:', pw.className);
-      console.log('[width-diag] page-wrap parent tag:', pw.parentElement.tagName);
+      banner.textContent = `DIAG: window.innerWidth=${window.innerWidth} | page-wrap computed max-width=${cs.maxWidth} | actual width=${cs.width} | margin-left=${cs.marginLeft} | margin-right=${cs.marginRight}`;
     }
+    document.body.insertBefore(banner, document.body.firstChild);
   })();
 </script>
 <script>
