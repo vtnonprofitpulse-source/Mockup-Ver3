@@ -7,6 +7,7 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: Arial, sans-serif; background: #f5f5f5; color: #222; font-size: 15px; }
+  .page-wrap { max-width: 1100px; margin: 0 auto; background: #fff; }
 
   .header { background: #fff; border-bottom: 1px solid #ddd; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
   .logo { display: flex; align-items: center; gap: 10px; }
@@ -88,6 +89,7 @@
 </head>
 <body>
 
+<div class="page-wrap">
 <div class="header">
   <div class="logo">
     <div class="logo-icon">🌿</div>
@@ -229,6 +231,7 @@
 
 <div class="footer">
   Vermont Nonprofit Pulse, Inc. &nbsp;·&nbsp; Alpha testing — not yet public &nbsp;·&nbsp; vermontnonprofitpulse.org &nbsp;·&nbsp; A Vermont nonprofit
+</div>
 </div>
 
 <script>
@@ -396,7 +399,7 @@
           </div>
           <span class="card-location">📍 ${item.town || ''} · ${item.county || ''}</span>
         </div>
-        <div class="card-title">${item.title || ''}</div>
+        <a class="card-title" href="${item.source_url || '#'}" target="_blank" style="display:block; text-decoration:none; color:#1a1a1a;">${item.title || ''}</a>
         <div class="card-desc">${item.description || ''}</div>
         <div class="card-bottom">
           <span class="card-org">🚴 ${item.organization_name} <span class="card-cat">${item.mission_area || ''}</span></span>
