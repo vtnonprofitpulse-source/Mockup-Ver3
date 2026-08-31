@@ -437,10 +437,19 @@
     if (currentMission) parts.push(`<span class="filter-tag" onclick="clearMission()">🚴 ${currentMission} ✕</span>`);
     const searchTerm = document.getElementById('searchInput').value.trim();
     if (searchTerm) parts.push(`<span class="filter-tag" onclick="clearSearch()">🔍 ${searchTerm} ✕</span>`);
+    if (!document.getElementById('includeOngoing').checked) {
+      parts.push(`<span class="filter-tag" onclick="resetIncludeOngoing()">🚫 Excluding ongoing/recurring ✕</span>`);
+    }
     if (parts.length > 0) {
       parts.push(`<button class="clear-btn" onclick="clearAll()">Clear all</button>`);
     }
     tags.innerHTML = parts.join('');
+  }
+
+  function resetIncludeOngoing() {
+    document.getElementById('includeOngoing').checked = true;
+    updateActiveTags();
+    loadData();
   }
 
   function clearSearch() {
@@ -515,6 +524,7 @@
     document.getElementById('countyFilter').value = '';
     document.getElementById('townFilter').value = '';
     document.getElementById('dateFilter').value = '';
+    document.getElementById('includeOngoing').checked = true;
     document.getElementById('searchInput').value = '';
     document.getElementById('categoryJump').value = '';
     document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
