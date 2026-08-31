@@ -90,6 +90,11 @@
   @media (max-width: 480px) {
     .logo-text { font-size: 19px; }
   }
+  .mobile-filter-toggle { display: none; }
+  @media (max-width: 600px) {
+    .mobile-filter-toggle { display: block; text-align: center; padding: 10px; cursor: pointer; color: #1a56a0; font-weight: bold; border-bottom: 1px solid #eee; background: #fff; }
+    .filters2.mobile-collapsed { display: none; }
+  }
 </style>
 </head>
 <body>
@@ -124,7 +129,8 @@
   </div>
 </div>
 
-<div class="filters2">
+<div class="mobile-filter-toggle" onclick="toggleMobileFilters()">▼ Filters</div>
+<div class="filters2 mobile-collapsed" id="filtersRow">
   <div class="filter-group" style="width:150px;">
     <label>Category</label>
     <select id="categoryJump" style="width:150px; box-sizing:border-box;" onchange="if(this.value) filterByMission(this.value); else clearMission();">
@@ -494,6 +500,14 @@
       return orgMatch.mission_area;
     }
     return null;
+  }
+
+  function toggleMobileFilters() {
+    const row = document.getElementById('filtersRow');
+    const toggle = document.querySelector('.mobile-filter-toggle');
+    const isCollapsed = row.classList.contains('mobile-collapsed');
+    row.classList.toggle('mobile-collapsed');
+    toggle.textContent = isCollapsed ? '▲ Hide filters' : '▼ Filters';
   }
 
   function browseRelatedCategory(category) {
