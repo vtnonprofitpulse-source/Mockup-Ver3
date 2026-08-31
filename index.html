@@ -120,7 +120,7 @@
   <div style="position: relative; max-width: 540px; margin: 0 auto;">
     <div class="search-bar">
       <input type="text" id="searchInput" placeholder="🔍   Search by keyword, organization, or topic..." autocomplete="off" />
-      <button onclick="applyFilters()">Search</button>
+      <button onclick="collapseMobileFilters(); applyFilters()">Search</button>
     </div>
     <div id="searchSuggestions" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,0.2); margin-top:4px; overflow:hidden; z-index:9999; text-align:left;"></div>
   </div>
@@ -510,6 +510,13 @@
     toggle.textContent = isCollapsed ? '▲ Hide filters' : '▼ FILTERS (Category, Type, County, Town, Date)';
   }
 
+  function collapseMobileFilters() {
+    const row = document.getElementById('filtersRow');
+    const toggle = document.querySelector('.mobile-filter-toggle');
+    row.classList.add('mobile-collapsed');
+    toggle.textContent = '▼ FILTERS (Category, Type, County, Town, Date)';
+  }
+
   function browseRelatedCategory(category) {
     document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.pill').forEach(p => {
@@ -611,6 +618,7 @@
   function selectSuggestion(name) {
     document.getElementById('searchInput').value = name;
     document.getElementById('searchSuggestions').style.display = 'none';
+    collapseMobileFilters();
     applyFilters();
   }
 
@@ -621,6 +629,7 @@
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         document.getElementById('searchSuggestions').style.display = 'none';
+        collapseMobileFilters();
         applyFilters();
       }
     });
