@@ -437,7 +437,8 @@
     if (currentMission) parts.push(`<span class="filter-tag" onclick="clearMission()">🚴 ${currentMission} ✕</span>`);
     const searchTerm = document.getElementById('searchInput').value.trim();
     if (searchTerm) parts.push(`<span class="filter-tag" onclick="clearSearch()">🔍 ${searchTerm} ✕</span>`);
-    if (!document.getElementById('includeOngoing').checked) {
+    const hasDateFilter = !!document.getElementById('dateFilter').value;
+    if (hasDateFilter && !document.getElementById('includeOngoing').checked) {
       parts.push(`<span class="filter-tag" onclick="resetIncludeOngoing()" style="background:#fde8e8; color:#c0392b; font-weight:bold;">🚫 Excluding ongoing/recurring ✕</span>`);
     }
     if (parts.length > 0) {
