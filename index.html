@@ -206,6 +206,10 @@
       <option value="week">This week</option>
       <option value="month">This month</option>
     </select>
+    <label style="display:flex; align-items:center; gap:6px; font-weight:normal; margin-top:6px; font-size:12px; cursor:pointer;">
+      <input type="checkbox" id="includeOngoing" checked onchange="applyFilters()" />
+      Include ongoing/recurring
+    </label>
   </div>
 </div>
 </div>
@@ -624,6 +628,7 @@
     if (document.getElementById('countyFilter').value) params.county = document.getElementById('countyFilter').value;
     if (document.getElementById('townFilter').value) params.town = document.getElementById('townFilter').value;
     if (document.getElementById('dateFilter').value) params.date = document.getElementById('dateFilter').value;
+    if (!document.getElementById('includeOngoing').checked) params.excludeOngoing = 'true';
     if (document.getElementById('searchInput').value) params.search = document.getElementById('searchInput').value;
 
     try {
