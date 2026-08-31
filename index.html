@@ -129,7 +129,7 @@
   </div>
 </div>
 
-<div class="mobile-filter-toggle" onclick="toggleMobileFilters()">▼ Filters</div>
+<div class="mobile-filter-toggle" onclick="toggleMobileFilters()">▼ FILTERS (Category, Type, County, Town, Date)</div>
 <div class="filters2 mobile-collapsed" id="filtersRow">
   <div class="filter-group" style="width:150px;">
     <label>Category</label>
@@ -507,7 +507,7 @@
     const toggle = document.querySelector('.mobile-filter-toggle');
     const isCollapsed = row.classList.contains('mobile-collapsed');
     row.classList.toggle('mobile-collapsed');
-    toggle.textContent = isCollapsed ? '▲ Hide filters' : '▼ Filters';
+    toggle.textContent = isCollapsed ? '▲ Hide filters' : '▼ FILTERS (Category, Type, County, Town, Date)';
   }
 
   function browseRelatedCategory(category) {
