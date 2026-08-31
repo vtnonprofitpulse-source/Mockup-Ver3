@@ -201,7 +201,7 @@
   </div>
   <div class="filter-group">
     <label>Date</label>
-    <select id="dateFilter">
+    <select id="dateFilter" onchange="applyFilters()">
       <option value="">Any time</option>
       <option value="week">This week</option>
       <option value="month">This month</option>
@@ -510,6 +510,7 @@
     document.getElementById('typeFilter').value = '';
     document.getElementById('countyFilter').value = '';
     document.getElementById('townFilter').value = '';
+    document.getElementById('dateFilter').value = '';
     document.getElementById('searchInput').value = '';
     document.getElementById('categoryJump').value = '';
     document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
@@ -622,6 +623,7 @@
     if (document.getElementById('typeFilter').value) params.type = document.getElementById('typeFilter').value;
     if (document.getElementById('countyFilter').value) params.county = document.getElementById('countyFilter').value;
     if (document.getElementById('townFilter').value) params.town = document.getElementById('townFilter').value;
+    if (document.getElementById('dateFilter').value) params.date = document.getElementById('dateFilter').value;
     if (document.getElementById('searchInput').value) params.search = document.getElementById('searchInput').value;
 
     try {
