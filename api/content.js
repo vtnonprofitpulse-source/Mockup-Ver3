@@ -3,7 +3,7 @@ import { neon } from '@neondatabase/serverless';
 export default async function handler(req, res) {
   try {
     const sql = neon(process.env.DATABASE_URL);
-    const { type, county, town, mission, search, namesOnly, date } = req.query;
+    const { type, county, town, mission, search, namesOnly, date, excludeOngoing } = req.query;
 
     if (namesOnly) {
       const orgs = await sql(
@@ -28,9 +28,13 @@ export default async function handler(req, res) {
       paramCount++;
     }
     if (date === 'week') {
-      contentQuery += ` AND (c.event_date IS NULL OR c.event_date <= CURRENT_DATE + INTERVAL '7 days')`;
+      contentQuery += excludeOngoing === 'true'
+        ? ` AND c.event_date IS NOT NULL AND c.event_date <= CURRENT_DATE + INTERVAL '7 days'`
+        : ` AND (c.event_date IS NULL OR c.event_date <= CURRENT_DATE + INTERVAL '7 days')`;
     } else if (date === 'month') {
-      contentQuery += ` AND (c.event_date IS NULL OR c.event_date <= CURRENT_DATE + INTERVAL '30 days')`;
+      contentQuery += excludeOngoing === 'true'
+        ? ` AND c.event_date IS NOT NULL AND c.event_date <= CURRENT_DATE + INTERVAL '30 days'`
+        : ` AND (c.event_date IS NULL OR c.event_date <= CURRENT_DATE + INTERVAL '30 days')`;
     }
     if (county) {
       contentQuery += ` AND LOWER(c.county) = LOWER($${paramCount})`;
