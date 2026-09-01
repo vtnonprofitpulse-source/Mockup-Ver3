@@ -61,6 +61,8 @@ export default async function handler(req, res) {
       paramCount++;
     }
 
+    const countQuery = `SELECT COUNT(*) as total FROM ((${contentQuery}) UNION ALL (${orgsQuery})) combined`;
+
     const combinedQuery = `
       SELECT * FROM (
         (${contentQuery}) UNION ALL (${orgsQuery})
@@ -86,7 +88,9 @@ export default async function handler(req, res) {
     `;
 
     const results = await sql(combinedQuery, params);
-    res.status(200).json({ success: true, count: results.length, data: results });
+    const countResult = await sql(countQuery, params);
+    const totalCount = parseInt(countResult[0].total, 10);
+    res.status(200).json({ success: true, count: results.length, totalCount, data: results });
 
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
