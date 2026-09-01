@@ -260,6 +260,7 @@
 
 <script>
   let allData = [];
+  let totalResultCount = 0;
   let currentMission = 'Bikes & Pedestrian';
   let missionExplicitlySelected = false;
   let searchAllOverride = false;
@@ -356,6 +357,7 @@
     const url = `/api/content${query ? '?' + query : ''}`;
     const response = await fetch(url);
     const json = await response.json();
+    totalResultCount = json.totalCount ?? json.count ?? (json.data || []).length;
     return json.data || [];
   }
 
@@ -407,7 +409,9 @@
       }
     }
 
-    document.getElementById('resultsCount').textContent = `${items.length} result${items.length !== 1 ? 's' : ''} · updated today`;
+    document.getElementById('resultsCount').textContent = totalResultCount > items.length
+      ? `Showing ${items.length} of ${totalResultCount} results · updated today`
+      : `${items.length} result${items.length !== 1 ? 's' : ''} · updated today`;
 
     container.innerHTML = items.map(item => `
       <div class="card ${getCardClass(item.content_type)}">
