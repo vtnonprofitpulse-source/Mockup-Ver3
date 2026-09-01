@@ -149,12 +149,42 @@ VERMONT_PLACES = {
 }
 
 NON_VERMONT_SIGNALS = [
-    "new york city", "nyc", "park city", "utah", "boston", "massachusetts",
-    "new hampshire", " nh ", "chicago", "denver", "seattle", "los angeles",
-    "san francisco", "miami", "atlanta", "philadelphia", "washington dc",
-    "portland, or", "portland, me", "new jersey", "pennsylvania",
-    "california", "colorado", "florida", "texas", "ohio", "michigan"
+    # Full US state names except Vermont - comprehensive, not an ad-hoc
+    # list of cities someone happened to think of. Full names are safe to
+    # substring-match since they're long, distinctive words.
+    "alabama", "alaska", "arizona", "arkansas", "california", "colorado",
+    "connecticut", "delaware", "florida", "georgia", "hawaii", "idaho",
+    "illinois", "indiana", "iowa", "kansas", "kentucky", "louisiana",
+    "maine", "maryland", "massachusetts", "michigan", "minnesota",
+    "mississippi", "missouri", "montana", "nebraska", "nevada",
+    "new hampshire", "new jersey", "new mexico", "new york",
+    "north carolina", "north dakota", "ohio", "oklahoma", "oregon",
+    "pennsylvania", "rhode island", "south carolina", "south dakota",
+    "tennessee", "texas", "utah", "virginia", "washington state",
+    "west virginia", "wisconsin", "wyoming",
+    # DC - "washington" alone is ambiguous with Washington County, VT,
+    # so only match explicit DC phrasing, normalized for punctuation
+    "washington dc", "washington d c", "district of columbia",
+    # Well-known cities that can appear without their state name stated
+    "new york city", "nyc", "park city", "boston", "chicago", "denver",
+    "seattle", "los angeles", "san francisco", "miami", "atlanta",
+    "philadelphia",
 ]
+
+# US state abbreviations (except VT) for the common "City, ST" address
+# format - matched only immediately after a comma to avoid false
+# positives from the bare 2-letter code appearing inside other words.
+US_STATE_ABBREVIATIONS_EXCEPT_VT = [
+    "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID",
+    "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS",
+    "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK",
+    "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VA", "WA", "WV", "WI",
+    "WY", "DC",
+]
+_STATE_ABBR_PATTERN = re.compile(
+    r",\s*(" + "|".join(US_STATE_ABBREVIATIONS_EXCEPT_VT) + r")\b",
+    re.IGNORECASE,
+)
 
 BAD_PHRASES = [
     "further details can be found",
@@ -217,7 +247,18 @@ def hash_exists(cursor, source_hash):
 
 
 def is_vermont_content(title, description, org_town):
-    combined = (title + " " + description + " " + org_town).lower()
+    combined_raw = (title + " " + description + " " + org_town)
+    # Check the "City, ST" abbreviation pattern first, on the original
+    # text where commas are still intact.
+    if _STATE_ABBR_PATTERN.search(combined_raw):
+        print(f"  BLOCKED: non-Vermont state abbreviation in '{title}'")
+        return False
+    # Normalize punctuation before substring checks, so a signal like
+    # "washington dc" isn't missed just because the source text wrote it
+    # as "Washington, D.C." with a comma and periods.
+    combined = combined_raw.lower()
+    combined = combined.replace(",", " ").replace(".", " ")
+    combined = re.sub(r"\s+", " ", combined)
     for place in NON_VERMONT_SIGNALS:
         if place in combined:
             print(f"  BLOCKED: non-Vermont location in '{title}'")
