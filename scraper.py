@@ -287,8 +287,11 @@ def is_valid_record(record, org_town, event_date=None):
             return False
     if len(title) < 5:
         return False
-    if not is_vermont_content(title, description, org_town):
-        return False
+    # Deliberately not blocking out-of-state content (decision made after
+    # finding real false-positive risk in the location-matching approach -
+    # e.g. ", or" as a natural sentence conjunction risking a false match
+    # for Oregon). Out-of-state events from VT-based organizations are
+    # now listed rather than blocked.
     # A dated item that has already happened should never be saved (this
     # always means a wrong-date extraction or stale archived content) -
     # except News, which is allowed to legitimately reference the past.
