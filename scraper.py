@@ -269,7 +269,7 @@ def is_vermont_content(title, description, org_town):
     return True
 
 
-def is_valid_record(record, org_town, event_date=None):
+def is_valid_record(record, org_town, event_date=None, source_url="", recurrence_pattern=None):
     title = record.get("title", "").strip()
     description = record.get("description", "").strip()
     content_type = record.get("content_type", "").strip().lower()
@@ -299,6 +299,24 @@ def is_valid_record(record, org_town, event_date=None):
         if event_date < datetime.now().date():
             print(f"  BLOCKED: past date {event_date} for '{title}'")
             return False
+    # Root-cause fix for stale, undated records from an archived time
+    # period (confirmed real case: VMBA's /events/month/2026-07/ page,
+    # visited weeks ago when July was current - link discovery only
+    # moves forward to newer months, so a record from that page that
+    # lost its own date during extraction has no other mechanism to
+    # ever be caught as stale, and would sit mislabeled as "Ongoing"
+    # forever). Generic - checks any source URL for a YYYY-MM pattern
+    # (the format WordPress's popular "Events Calendar" plugin uses,
+    # not specific to VMBA), not applied to genuinely recurring items,
+    # which legitimately have no single date.
+    if event_date is None and not recurrence_pattern:
+        month_match = re.search(r"/(\d{4})-(\d{2})(?:/|$)", source_url)
+        if month_match:
+            url_year, url_month = int(month_match.group(1)), int(month_match.group(2))
+            today = datetime.now().date()
+            if (url_year, url_month) < (today.year, today.month):
+                print(f"  BLOCKED: undated record from archived {url_year}-{url_month:02d} page for '{title}'")
+                return False
     return True
 
 
@@ -1074,12 +1092,12 @@ def save_to_database(records, org_name, town, county, mission_area,
         else:
             event_date = parse_event_date(record.get("date_text", ""))
         record_source_url = record.get("source_url_override", source_url)
-        if not is_valid_record(record, town, event_date):
+        recurrence_pattern = validate_recurrence_pattern(record.get("recurrence_raw", ""))
+        if not is_valid_record(record, town, event_date, record_source_url, recurrence_pattern):
             blocked += 1
             continue
         series_key = make_series_key(record.get("title", ""), org_name)
         event_key = make_event_key(record.get("title", ""), event_date, org_name)
-        recurrence_pattern = validate_recurrence_pattern(record.get("recurrence_raw", ""))
 
         duplicate_match = find_duplicate_by_description(
             cursor, org_name, event_date, record.get("title", ""), record.get("description", "")
