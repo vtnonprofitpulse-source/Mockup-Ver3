@@ -678,7 +678,19 @@
     if (document.getElementById('townFilter').value) params.town = document.getElementById('townFilter').value;
     if (document.getElementById('dateFilter').value) params.date = document.getElementById('dateFilter').value;
     if (!document.getElementById('includeOngoing').checked) params.excludeOngoing = 'true';
-    if (document.getElementById('searchInput').value) params.search = document.getElementById('searchInput').value;
+    if (document.getElementById('searchInput').value) {
+      const typedSearch = document.getElementById('searchInput').value.trim();
+      const orgMatches = orgList.filter(o => matchesOrgSearch(o.organization_name, typedSearch));
+      // Only substitute when exactly one organization uniquely matches -
+      // otherwise a generic keyword (which could match several orgs, or
+      // none) stays as typed, searched literally as before.
+      if (orgMatches.length === 1) {
+        params.search = orgMatches[0].organization_name;
+        document.getElementById('searchInput').value = orgMatches[0].organization_name;
+      } else {
+        params.search = typedSearch;
+      }
+    }
 
     try {
       allData = await fetchData(params);
