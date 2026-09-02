@@ -458,6 +458,18 @@
     if (currentMission) parts.push(`<span class="filter-tag" onclick="clearMission()">🚴 ${currentMission} ✕</span>`);
     const searchTerm = document.getElementById('searchInput').value.trim();
     if (searchTerm) parts.push(`<span class="filter-tag" onclick="clearSearch()">🔍 ${searchTerm} ✕</span>`);
+    const typeVal = document.getElementById('typeFilter').value;
+    if (typeVal) parts.push(`<span class="filter-tag" onclick="clearTypeFilter()">🏷️ ${typeVal} ✕</span>`);
+    const countyVal = document.getElementById('countyFilter').value;
+    if (countyVal) parts.push(`<span class="filter-tag" onclick="clearCountyFilter()">📍 ${countyVal} County ✕</span>`);
+    const townVal = document.getElementById('townFilter').value;
+    if (townVal) parts.push(`<span class="filter-tag" onclick="clearTownFilter()">📍 ${townVal} ✕</span>`);
+    const dateSelect = document.getElementById('dateFilter');
+    const dateVal = dateSelect.value;
+    if (dateVal) {
+      const dateLabel = dateSelect.options[dateSelect.selectedIndex].text;
+      parts.push(`<span class="filter-tag" onclick="clearDateFilter()">📅 ${dateLabel} ✕</span>`);
+    }
     const hasDateFilter = !!document.getElementById('dateFilter').value;
     if (hasDateFilter && !document.getElementById('includeOngoing').checked) {
       parts.push(`<span class="filter-tag" onclick="resetIncludeOngoing()" style="background:#fde8e8; color:#c0392b; font-weight:bold;">🚫 Excluding ongoing/recurring ✕</span>`);
@@ -466,6 +478,30 @@
       parts.push(`<button class="clear-btn" onclick="clearAll()">Clear all</button>`);
     }
     tags.innerHTML = parts.join('');
+  }
+
+  function clearTypeFilter() {
+    document.getElementById('typeFilter').value = '';
+    updateActiveTags();
+    loadData();
+  }
+
+  function clearCountyFilter() {
+    document.getElementById('countyFilter').value = '';
+    updateActiveTags();
+    loadData();
+  }
+
+  function clearTownFilter() {
+    document.getElementById('townFilter').value = '';
+    updateActiveTags();
+    loadData();
+  }
+
+  function clearDateFilter() {
+    document.getElementById('dateFilter').value = '';
+    updateActiveTags();
+    loadData();
   }
 
   function resetIncludeOngoing() {
