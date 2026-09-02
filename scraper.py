@@ -148,6 +148,103 @@ VERMONT_PLACES = {
     "northeast kingdom", "mad river valley"
 }
 
+# Vermont town/city -> county mapping, built from Wikipedia's
+# "List of municipalities in Vermont" (247 municipalities across 14
+# counties), verified September 2026. Includes cities, towns, and
+# notable incorporated villages (which are often the commonly-used
+# location name, distinct from their parent town).
+VT_TOWN_TO_COUNTY = {
+    "burlington": "Chittenden", "south burlington": "Chittenden",
+    "colchester": "Chittenden", "rutland": "Rutland", "bennington": "Bennington",
+    "brattleboro": "Windham", "essex": "Chittenden", "milton": "Chittenden",
+    "hartford": "Windsor", "essex junction": "Chittenden", "williston": "Chittenden",
+    "middlebury": "Addison", "springfield": "Windsor", "barre": "Washington",
+    "montpelier": "Washington", "winooski": "Chittenden", "shelburne": "Chittenden",
+    "st johnsbury": "Caledonia", "st. johnsbury": "Caledonia",
+    "st albans": "Franklin", "st. albans": "Franklin", "swanton": "Franklin",
+    "northfield": "Washington", "lyndon": "Caledonia", "morristown": "Lamoille",
+    "waterbury": "Washington", "stowe": "Lamoille", "jericho": "Chittenden",
+    "fairfax": "Franklin", "georgia": "Franklin", "rockingham": "Windham",
+    "randolph": "Orange", "hinesburg": "Chittenden", "derby": "Orleans",
+    "manchester": "Bennington", "castleton": "Rutland", "newport": "Orleans",
+    "richmond": "Chittenden", "brandon": "Rutland", "cambridge": "Lamoille",
+    "charlotte": "Chittenden", "bristol": "Addison", "norwich": "Windsor",
+    "shaftsbury": "Bennington", "windsor": "Windsor", "williamstown": "Orange",
+    "johnson": "Lamoille", "highgate": "Franklin", "hartland": "Windsor",
+    "pownal": "Bennington", "underhill": "Chittenden", "hyde park": "Lamoille",
+    "poultney": "Rutland", "westminster": "Windham", "chester": "Windsor",
+    "woodstock": "Windsor", "hardwick": "Caledonia", "barton": "Orleans",
+    "pittsford": "Rutland", "berlin": "Washington", "weathersfield": "Windsor",
+    "enosburgh": "Franklin", "enosburg falls": "Franklin", "bradford": "Orange",
+    "thetford": "Orange", "royalton": "Windsor", "south royalton": "Windsor",
+    "fair haven": "Rutland", "ferrisburgh": "Addison", "putney": "Windham",
+    "east montpelier": "Washington", "vergennes": "Addison", "arlington": "Bennington",
+    "clarendon": "Rutland", "richford": "Franklin", "danville": "Caledonia",
+    "newbury": "Orange", "wilmington": "Windham", "west rutland": "Rutland",
+    "vernon": "Windham", "ludlow": "Windsor", "sheldon": "Franklin",
+    "dorset": "Bennington", "wallingford": "Rutland", "guilford": "Windham",
+    "alburgh": "Grand Isle", "grand isle": "Grand Isle", "monkton": "Addison",
+    "westford": "Chittenden", "fairfield": "Franklin", "warren": "Washington",
+    "bethel": "Windsor", "huntington": "Chittenden", "londonderry": "Windham",
+    "dummerston": "Windham", "waitsfield": "Washington", "dover": "Windham",
+    "middlesex": "Washington", "proctor": "Rutland", "starksboro": "Addison",
+    "moretown": "Washington", "marlboro": "Windham", "troy": "Orleans",
+    "north troy": "Orleans", "new haven": "Addison", "south hero": "Grand Isle",
+    "wolcott": "Lamoille", "barnet": "Caledonia", "calais": "Washington",
+    "burke": "Caledonia", "west burke": "Caledonia", "newfane": "Windham",
+    "marshfield": "Washington", "sharon": "Windsor", "berkshire": "Franklin",
+    "corinth": "Orange", "cabot": "Washington", "pawlet": "Rutland",
+    "duxbury": "Washington", "killington": "Rutland", "cavendish": "Windsor",
+    "proctorsville": "Windsor", "mount holly": "Rutland", "addison": "Addison",
+    "fayston": "Washington", "franklin": "Franklin", "fletcher": "Franklin",
+    "west windsor": "Windsor", "whitingham": "Windham", "jacksonville": "Windham",
+    "craftsbury": "Orleans", "eden": "Lamoille", "tunbridge": "Orange",
+    "lincoln": "Addison", "bolton": "Chittenden", "townshend": "Windham",
+    "danby": "Rutland", "bakersfield": "Franklin", "waterford": "Caledonia",
+    "shoreham": "Addison", "lunenburg": "Essex", "brookfield": "Orange",
+    "orwell": "Addison", "chittenden": "Rutland", "plainfield": "Washington",
+    "chelsea": "Orange", "irasburg": "Orleans", "bridport": "Addison",
+    "salisbury": "Addison", "wells": "Rutland", "braintree": "Orange",
+    "cornwall": "Addison", "topsham": "Orange", "montgomery": "Franklin",
+    "winhall": "Bennington", "ryegate": "Caledonia", "south ryegate": "Caledonia",
+    "brighton": "Essex", "island pond": "Essex", "mendon": "Rutland",
+    "concord": "Essex", "glover": "Orleans", "coventry": "Orleans",
+    "rochester": "Windsor", "shrewsbury": "Rutland", "strafford": "Orange",
+    "sunderland": "Bennington", "orange": "Orange", "brownington": "Orleans",
+    "washington": "Orange", "charleston": "Orleans", "jamaica": "Windham",
+    "barnard": "Windsor", "leicester": "Addison", "fairlee": "Orange",
+    "groton": "Caledonia", "albany": "Orleans", "benson": "Rutland",
+    "worcester": "Washington", "walden": "Caledonia", "north hero": "Grand Isle",
+    "woodbury": "Washington", "pomfret": "Windsor", "sutton": "Caledonia",
+    "bridgewater": "Windsor", "canaan": "Essex", "lowell": "Orleans",
+    "elmore": "Lamoille", "wardsboro": "Windham", "stamford": "Bennington",
+    "weybridge": "Addison", "greensboro": "Orleans", "middletown springs": "Rutland",
+    "st george": "Chittenden", "st. george": "Chittenden", "halifax": "Windham",
+    "wheelock": "Caledonia", "ripton": "Addison", "hubbardton": "Rutland",
+    "stockbridge": "Windsor", "peacham": "Caledonia", "readsboro": "Bennington",
+    "rupert": "Bennington", "reading": "Windsor", "waterville": "Lamoille",
+    "sheffield": "Caledonia", "roxbury": "Washington", "vershire": "Orange",
+    "panton": "Addison", "grafton": "Windham", "plymouth": "Windsor",
+    "morgan": "Orleans", "holland": "Orleans", "weston": "Windsor",
+    "west fairlee": "Orange", "newark": "Caledonia", "kirby": "Caledonia",
+    "andover": "Windsor", "tinmouth": "Rutland", "jay": "Orleans",
+    "sudbury": "Rutland", "brookline": "Windham", "westfield": "Orleans",
+    "peru": "Bennington", "pittsfield": "Rutland", "isle la motte": "Grand Isle",
+    "windham": "Windham", "waltham": "Addison", "stratton": "Windham",
+    "whiting": "Addison", "sandgate": "Bennington", "athens": "Windham",
+    "ira": "Rutland", "hancock": "Addison", "belvidere": "Lamoille",
+    "westmore": "Orleans", "woodford": "Bennington", "granville": "Addison",
+    "east haven": "Essex", "guildhall": "Essex", "west haven": "Rutland",
+    "baltimore": "Windsor", "bloomfield": "Essex", "maidstone": "Essex",
+    "mount tabor": "Rutland", "stannard": "Caledonia", "landgrove": "Bennington",
+    "goshen": "Addison", "norton": "Essex", "searsburg": "Bennington",
+    "brunswick": "Essex", "lemington": "Essex", "granby": "Essex",
+    "victory": "Essex", "bellows falls": "Windham", "morrisville": "Lamoille",
+    "jeffersonville": "Lamoille", "derby center": "Orleans", "derby line": "Orleans",
+    "north bennington": "Bennington", "old bennington": "Bennington",
+    "saxtons river": "Windham", "wells river": "Orange",
+}
+
 NON_VERMONT_SIGNALS = [
     # Full US state names except Vermont - comprehensive, not an ad-hoc
     # list of cities someone happened to think of. Full names are safe to
@@ -569,13 +666,46 @@ def extract_jsonld_events(soup, source_url):
             if not description:
                 description = f"{name} - see event page for details."
 
-            records.append({
+            # Extract the event's own real location (not the organization's
+            # fixed home town/county), the same structured data already
+            # confirmed reliable for dates. Root-cause fix for records
+            # showing an organization's home location regardless of where
+            # a specific event actually happens (confirmed real case:
+            # Kelly Brush DC/CT events, VMBA county-filter confusion -
+            # both traced to every record simply inheriting the org's own
+            # fixed town/county). Only overrides when the extracted town is
+            # a recognized, real Vermont municipality - matched against a
+            # verified 263-entry mapping, not guessed - so an out-of-state
+            # location (which wouldn't match) safely falls through to the
+            # existing org-level default rather than producing a wrong
+            # county.
+            town_override = None
+            county_override = None
+            location = item.get("location")
+            if isinstance(location, dict):
+                address = location.get("address")
+                locality = None
+                if isinstance(address, dict):
+                    locality = address.get("addressLocality")
+                elif isinstance(address, str):
+                    locality = address
+                if locality:
+                    locality_key = locality.strip().lower()
+                    if locality_key in VT_TOWN_TO_COUNTY:
+                        town_override = locality.strip()
+                        county_override = VT_TOWN_TO_COUNTY[locality_key]
+
+            record = {
                 "title": name,
                 "content_type": "Event",
                 "description": description[:500],
                 "event_date_override": parsed_date,
                 "source_url_override": item.get("url", source_url),
-            })
+            }
+            if town_override:
+                record["town_override"] = town_override
+                record["county_override"] = county_override
+            records.append(record)
     return records
 
 
@@ -1092,8 +1222,10 @@ def save_to_database(records, org_name, town, county, mission_area,
         else:
             event_date = parse_event_date(record.get("date_text", ""))
         record_source_url = record.get("source_url_override", source_url)
+        record_town = record.get("town_override", town)
+        record_county = record.get("county_override", county)
         recurrence_pattern = validate_recurrence_pattern(record.get("recurrence_raw", ""))
-        if not is_valid_record(record, town, event_date, record_source_url, recurrence_pattern):
+        if not is_valid_record(record, record_town, event_date, record_source_url, recurrence_pattern):
             blocked += 1
             continue
         series_key = make_series_key(record.get("title", ""), org_name)
@@ -1109,9 +1241,10 @@ def save_to_database(records, org_name, town, county, mission_area,
                 cursor.execute(
                     "UPDATE content SET event_date = %s, description = %s, "
                     "title = %s, source_url = %s, source_hash = %s, "
+                    "town = %s, county = %s, "
                     "event_key = %s WHERE id = %s",
                     (final_date, record.get("description"), record.get("title"),
-                     record_source_url, source_hash,
+                     record_source_url, source_hash, record_town, record_county,
                      make_event_key(record.get("title", ""), final_date, org_name),
                      dup_id)
                 )
@@ -1135,9 +1268,10 @@ def save_to_database(records, org_name, town, county, mission_area,
                 cursor.execute(
                     "UPDATE content SET event_date = %s, description = %s, "
                     "title = %s, source_url = %s, source_hash = %s, "
+                    "town = %s, county = %s, "
                     "event_key = %s WHERE id = %s",
                     (final_date, record.get("description"), record.get("title"),
-                     record_source_url, source_hash,
+                     record_source_url, source_hash, record_town, record_county,
                      make_event_key(record.get("title", ""), final_date, org_name),
                      existing_id)
                 )
@@ -1155,10 +1289,10 @@ def save_to_database(records, org_name, town, county, mission_area,
                 cursor.execute(
                     "UPDATE content SET event_date = %s, description = %s, "
                     "title = %s, content_type = %s, source_url = %s, "
-                    "source_hash = %s, series_key = %s WHERE id = %s",
+                    "source_hash = %s, series_key = %s, town = %s, county = %s WHERE id = %s",
                     (event_date, record.get("description"), record.get("title"),
                      record.get("content_type"), record_source_url, source_hash,
-                     series_key, existing_by_event_key)
+                     series_key, record_town, record_county, existing_by_event_key)
                 )
                 conn.commit()
                 updated += 1
@@ -1176,7 +1310,7 @@ def save_to_database(records, org_name, town, county, mission_area,
                 "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                 (org_name, record.get("content_type"), record.get("title"),
                  record.get("description"), event_date, event_key, series_key,
-                 recurrence_pattern, town, county, mission_area, record_source_url,
+                 recurrence_pattern, record_town, record_county, mission_area, record_source_url,
                  source_hash, "active")
             )
             conn.commit()
