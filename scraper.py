@@ -620,6 +620,69 @@ def discover_ical_feed(candidate_urls):
     return None
 
 
+_DATE_TIME_PATTERN = re.compile(
+    r"(Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday),\s+"
+    r"(January|February|March|April|May|June|July|August|September|October|November|December)\s+"
+    r"(\d{1,2}),\s*(\d{4})\s+at\s+(\d{1,2}):(\d{2})\s*(AM|PM)",
+    re.IGNORECASE,
+)
+
+
+def extract_local_motion_own_events(soup, source_url):
+    """Deterministic parser for Local Motion's own "Find Local Motion at
+    these public events" section on localmotion.org/events. This section
+    is structurally separate from the page's general community calendar
+    (an embedded Google Calendar of third-party-submitted events, not
+    scraped at all here) - deliberately built after confirming (via a
+    real, live fetch of this page) that Local Motion's own events are
+    reliably isolated in their own section, each already paired with its
+    own date/title in the source structure. This sidesteps the dense
+    multi-event roundup-post problem confirmed earlier for their
+    Facebook page entirely, rather than trying to fix date pairing
+    within that riskier format.
+    """
+    records = []
+    heading = None
+    for tag in soup.find_all(["h1", "h2", "h3", "h4"]):
+        if "find local motion at these public events" in tag.get_text(strip=True).lower():
+            heading = tag
+            break
+    if not heading:
+        print("  Local Motion: 'public events' section not found on page")
+        return records
+
+    current_date_str = None
+    for el in heading.find_all_next():
+        text = el.get_text(strip=True) if hasattr(el, "get_text") else ""
+        date_match = _DATE_TIME_PATTERN.search(text)
+        if date_match and len(text) < 100:
+            # A short piece of text containing just the date/time, not a
+            # long paragraph that happens to mention a date in passing.
+            current_date_str = date_match.group(0)
+            continue
+        if el.name == "a" and current_date_str:
+            href = el.get("href", "")
+            title = el.get_text(strip=True)
+            if not href or not title or "localmotion.org" not in href:
+                continue
+            try:
+                parsed_date = dateutil_parser.parse(current_date_str, fuzzy=True).date()
+            except (ValueError, TypeError):
+                current_date_str = None
+                continue
+            records.append({
+                "title": title,
+                "content_type": "Event",
+                "description": f"{title} - a Local Motion event. See event page for details.",
+                "event_date_override": parsed_date,
+                "source_url_override": href,
+            })
+            current_date_str = None  # each date pairs with exactly one event
+
+    print(f"  Local Motion: found {len(records)} of their own public events")
+    return records
+
+
 def extract_jsonld_events(soup, source_url):
     """Extract event records directly from the page's own structured data
     (schema.org Event via JSON-LD), if present - a real, deterministic
@@ -718,6 +781,8 @@ def scrape_website(url):
         # this is where it lives, and it was previously being destroyed
         # before we ever got a chance to look at it (August 2026).
         jsonld_events = extract_jsonld_events(soup, url)
+        if "localmotion.org" in url:
+            jsonld_events = jsonld_events + extract_local_motion_own_events(soup, url)
         # Strip navigation/header/footer boilerplate - many real sites (e.g.
         # WordPress themes) put large menus in <header> without a <nav> tag,
         # which previously ate into the truncation budget before any real
@@ -1329,6 +1394,13 @@ def save_to_database(records, org_name, town, county, mission_area,
 
 website_nonprofits = [
     {
+        "name": "Local Motion",
+        "urls": ["https://www.localmotion.org/events"],
+        "town": "Burlington", "county": "Chittenden",
+        "mission": "Bikes & Pedestrian",
+        "source_url": "https://www.localmotion.org/events"
+    },
+    {
         "name": "Old Spokes Home",
         "urls": [
             "https://www.oldspokeshome.com",
@@ -1509,13 +1581,6 @@ website_nonprofits = [
 ]
 
 facebook_nonprofits = [
-    {
-        "name": "Local Motion",
-        "facebook_url": "https://www.facebook.com/localmotionvt/",
-        "town": "Burlington", "county": "Chittenden",
-        "mission": "Bikes & Pedestrian",
-        "source_url": "https://www.localmotion.org"
-    },
     {
         "name": "Pride Rides VT",
         "facebook_url": "https://www.facebook.com/PrideRidesVT/",
