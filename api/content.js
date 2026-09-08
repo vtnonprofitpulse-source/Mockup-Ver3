@@ -3,7 +3,8 @@ import { neon } from '@neondatabase/serverless';
 export default async function handler(req, res) {
   try {
     const sql = neon(process.env.DATABASE_URL);
-    const { type, county, town, mission, search, namesOnly, date, excludeOngoing } = req.query;
+    const { type, county, town, mission, search, namesOnly, date, excludeOngoing, offset } = req.query;
+    const safeOffset = Math.max(0, parseInt(offset, 10) || 0);
 
     if (namesOnly) {
       const orgs = await sql(
@@ -84,13 +85,14 @@ export default async function handler(req, res) {
           ELSE 9
         END ASC,
         id DESC
-      LIMIT 100
+      LIMIT 100 OFFSET $${paramCount}
     `;
 
-    const results = await sql(combinedQuery, params);
+    const combinedParams = [...params, safeOffset];
+    const results = await sql(combinedQuery, combinedParams);
     const countResult = await sql(countQuery, params);
     const totalCount = parseInt(countResult[0].total, 10);
-    res.status(200).json({ success: true, count: results.length, totalCount, data: results });
+    res.status(200).json({ success: true, count: results.length, totalCount, offset: safeOffset, data: results });
 
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
