@@ -261,6 +261,8 @@
 <script>
   let allData = [];
   let totalResultCount = 0;
+  let currentSearchParams = {};
+  let isLoadingMore = false;
   let currentMission = 'Bikes & Pedestrian';
   let missionExplicitlySelected = false;
   let searchAllOverride = false;
@@ -410,7 +412,7 @@
     }
 
     document.getElementById('resultsCount').textContent = totalResultCount > items.length
-      ? `Showing ${items.length} of ${totalResultCount} results · updated today`
+      ? `Showing ${items.length} of ${totalResultCount} results - scroll for more · updated today`
       : `${items.length} result${items.length !== 1 ? 's' : ''} · updated today`;
 
     container.innerHTML = items.map(item => `
@@ -434,7 +436,12 @@
           <a class="card-link" href="${item.source_url || '#'}" target="_blank">View details →</a>
         </div>
       </div>
-    `).join('');
+    `).join('') + '<div id="scrollSentinel" style="text-align:center; padding:16px; color:#888; font-size:13px;"></div>';
+
+    // IntersectionObserver watches the sentinel and triggers loading the
+    // next batch when it comes into view, meaning near the bottom of the
+    // current results.
+    observeScrollSentinel();
   }
 
   // Filter by mission pill
@@ -728,6 +735,7 @@
       }
     }
 
+    currentSearchParams = params;
     try {
       allData = await fetchData(params);
       renderCards(allData);
@@ -735,6 +743,36 @@
     } catch (error) {
       document.getElementById('cardsContainer').innerHTML = '<div class="no-results">Error loading data. Please try again.</div>';
     }
+  }
+
+  async function loadMoreData() {
+    if (isLoadingMore || allData.length >= totalResultCount) return;
+    isLoadingMore = true;
+    const sentinel = document.getElementById('scrollSentinel');
+    if (sentinel) sentinel.textContent = 'Loading more...';
+    try {
+      const params = { ...currentSearchParams, offset: allData.length };
+      const nextBatch = await fetchData(params);
+      allData = allData.concat(nextBatch);
+      renderCards(allData);
+    } catch (error) {
+      // A failed "load more" shouldn't wipe out results already showing -
+      // just stop silently, the user can scroll again to retry.
+    } finally {
+      isLoadingMore = false;
+      if (sentinel) sentinel.textContent = '';
+    }
+  }
+
+  let scrollObserver = null;
+  function observeScrollSentinel() {
+    if (scrollObserver) scrollObserver.disconnect();
+    const sentinel = document.getElementById('scrollSentinel');
+    if (!sentinel) return;
+    scrollObserver = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) loadMoreData();
+    }, { rootMargin: '400px' });
+    scrollObserver.observe(sentinel);
   }
 
   // Load on page start with Bikes & Pedestrian selected
