@@ -27,7 +27,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install psycopg2-binary==2.9.12 requests==2.34.2 beautifulsoup4==4.15.0 anthropic==1.0.0 pdfplumber==0.11.10 python-dateutil==2.9.0.post0
+          pip install psycopg2-binary==2.9.12 requests==2.34.2 beautifulsoup4==4.15.0 anthropic==1.0.0 pdfplumber==0.11.10 python-dateutil==2.9.0.post0 playwright==1.48.0
+
+      - name: Install Playwright browser
+        run: |
+          playwright install --with-deps chromium
 
       - name: Run scraper
         env:
