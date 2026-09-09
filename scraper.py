@@ -809,6 +809,38 @@ def fetch_rendered_html(url, timeout_ms=20000):
         return None
 
 
+_BOT_PROTECTION_SIGNATURES = [
+    "performing security verification",
+    "checking your browser",
+    "verify you are human",
+    "just a moment",
+    "ddos protection by cloudflare",
+    "cloudflare ray id",
+    "enable javascript and cookies to continue",
+]
+
+
+def check_bot_protection(html_or_text, url):
+    """Lightweight, deterministic check for common bot-protection/challenge
+    page signatures - runs for every organization (not just known cases),
+    so real usage data on how common this is across all tracked orgs can
+    be gathered from a normal scrape, without needing Playwright or any
+    extra request. Confirmed real trigger case: Local Motion's own site,
+    which returned a Cloudflare-style "Performing security verification"
+    challenge even to a real browser (Playwright), not just a plain
+    request - meaning this is active bot detection, not simply
+    JavaScript rendering. Logs a clear, searchable warning; does not
+    alter scraping behavior, since a blocked page already naturally
+    yields little to no extractable content on its own.
+    """
+    lower_text = html_or_text.lower()
+    for signature in _BOT_PROTECTION_SIGNATURES:
+        if signature in lower_text:
+            print(f"  BOT PROTECTION DETECTED at {url}: matched '{signature}'")
+            return True
+    return False
+
+
 def scrape_website(url):
     try:
         headers = {"User-Agent": "VermontNonprofitPulse/1.0"}
@@ -817,9 +849,11 @@ def scrape_website(url):
             rendered_html = fetch_rendered_html(url)
         if rendered_html:
             soup = BeautifulSoup(rendered_html, "html.parser")
+            check_bot_protection(rendered_html, url)
         else:
             response = requests.get(url, timeout=10, headers=headers)
             soup = BeautifulSoup(response.text, "html.parser")
+            check_bot_protection(response.text, url)
         # Capture structured event data BEFORE stripping script tags below -
         # this is where it lives, and it was previously being destroyed
         # before we ever got a chance to look at it (August 2026).
