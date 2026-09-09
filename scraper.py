@@ -777,11 +777,49 @@ def extract_jsonld_events(soup, source_url):
     return records
 
 
+def fetch_rendered_html(url, timeout_ms=20000):
+    """Fetch a page's fully-rendered HTML using a real browser (Playwright),
+    for pages whose content is inserted by JavaScript after load and is
+    therefore invisible to a plain HTTP request (confirmed real case:
+    Local Motion's own "public events" section - a direct diagnostic
+    showed zero heading tags and the target content entirely absent from
+    the raw HTML a plain request receives). Deliberately used only for
+    specific, known JS-rendered pages, not applied broadly, since most
+    pages don't need it and browser rendering is meaningfully slower.
+    Returns None on any failure, so the caller can safely fall back to
+    the regular request rather than crash the whole scraper run.
+    """
+    try:
+        from playwright.sync_api import sync_playwright
+        with sync_playwright() as p:
+            browser = p.chromium.launch()
+            page = browser.new_page()
+            page.goto(url, timeout=timeout_ms)
+            # Wait for network activity to settle, since we don't know the
+            # exact element the dynamic content loads into ahead of time.
+            try:
+                page.wait_for_load_state("networkidle", timeout=timeout_ms)
+            except Exception:
+                pass  # proceed with whatever has loaded so far
+            html = page.content()
+            browser.close()
+            return html
+    except Exception as e:
+        print(f"  Playwright fetch failed for {url}: {e}")
+        return None
+
+
 def scrape_website(url):
     try:
         headers = {"User-Agent": "VermontNonprofitPulse/1.0"}
-        response = requests.get(url, timeout=10, headers=headers)
-        soup = BeautifulSoup(response.text, "html.parser")
+        rendered_html = None
+        if "localmotion.org" in url:
+            rendered_html = fetch_rendered_html(url)
+        if rendered_html:
+            soup = BeautifulSoup(rendered_html, "html.parser")
+        else:
+            response = requests.get(url, timeout=10, headers=headers)
+            soup = BeautifulSoup(response.text, "html.parser")
         # Capture structured event data BEFORE stripping script tags below -
         # this is where it lives, and it was previously being destroyed
         # before we ever got a chance to look at it (August 2026).
