@@ -648,7 +648,12 @@ def extract_local_motion_own_events(soup, source_url):
             heading = tag
             break
     if not heading:
-        print("  Local Motion: 'public events' section not found on page")
+        page_text = soup.get_text(" ", strip=True).lower()
+        phrase_present = "find local motion at these public events" in page_text
+        print(f"  Local Motion DIAG: heading not found via h1-h4. Phrase present anywhere in page text: {phrase_present}")
+        all_headings = soup.find_all(["h1", "h2", "h3", "h4", "h5", "h6"])
+        heading_texts = [f"{h.name}:'{h.get_text(strip=True)[:60]}'" for h in all_headings[:15]]
+        print(f"  Local Motion DIAG: first 15 heading tags found on page: {heading_texts}")
         return records
 
     current_date_str = None
